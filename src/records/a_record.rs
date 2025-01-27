@@ -56,11 +56,8 @@ impl DnsRecord for ARecord {
         self.query = Some(query);
     }
 
-    fn get_query(&self) -> Result<String, String> {
-        match self.query {
-            Some(ref query) => Ok(query.clone()),
-            None => Err("No query string returned".to_string())
-        }
+    fn get_query(&self) -> Option<String> {
+        self.query.clone()
     }
 }
 
