@@ -15,5 +15,13 @@ pub trait DnsRecord {
 
     fn set_dns_class(&mut self, dns_class: DnsClasses);
 
-    fn get_dns_class(&self) -> DnsClasses;
+    fn get_dns_class(&self) -> Result<DnsClasses, String>;
+
+    fn set_ttl(&mut self, ttl: u32);
+
+    fn get_ttl(&self) -> u32;
+
+    fn set_query(&mut self, query: String);
+
+    fn get_query(&self) -> Result<String, String>;
 }
