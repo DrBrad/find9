@@ -47,6 +47,22 @@ impl DnsQuery {
         }
     }
 
+    pub fn set_type(&mut self, _type: Types) {
+        self._type = _type;
+    }
+
+    pub fn get_type(&self) -> Types {
+        self._type
+    }
+
+    pub fn set_dns_class(&mut self, dns_class: DnsClasses) {
+        self.dns_class = dns_class;
+    }
+
+    pub fn get_dns_class(&self) -> DnsClasses {
+        self.dns_class
+    }
+
     pub fn get_length(&self) -> usize {
         self.query.as_ref().unwrap().as_bytes().len()+6
     }
