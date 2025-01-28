@@ -1,5 +1,6 @@
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
+use crate::utils::domain_utils::pack_domain;
 
 #[derive(Clone)]
 pub struct DnsQuery {
@@ -30,7 +31,21 @@ impl DnsQuery {
     }
 
     pub fn encode(&self) -> Vec<u8> {
-        todo!()
+        let mut buf = vec![0u8; self.get_length()];
+        let mut offset = 0;
+
+        let address = pack_domain(self.query.as_ref().unwrap().as_str());
+
+        //COPY...
+        offset += address.len();
+
+        buf[offset] = (self._type.get_code() >> 8) as u8;
+        buf[offset+1] = self._type.get_code() as u8;
+
+        buf[offset+2] = (self.dns_class.get_code() >> 8) as u8;
+        buf[offset+3] = self.dns_class.get_code() as u8;
+
+        buf
     }
 
     pub fn decode(&mut self, buf: &[u8], off: usize) {

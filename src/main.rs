@@ -23,5 +23,6 @@ fn main() {
     let mut message = MessageBase::new(20);
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
 
+    println!("{:?}", message.encode());
 
 }
