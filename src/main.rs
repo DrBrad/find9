@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
+use crate::messages::message_base::MessageBase;
 use crate::records::a_record::ARecord;
 use crate::records::inter::dns_record::DnsRecord;
 
@@ -15,4 +16,7 @@ fn main() {
     record.set_address(IpAddr::from([127, 0, 0, 1]));
 
     println!("{:?}", record.encode());
+
+
+    let mut message = MessageBase::new(20);
 }

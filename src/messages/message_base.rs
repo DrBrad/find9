@@ -139,4 +139,44 @@ impl MessageBase {
     pub fn decode(&self, buf: &[u8], off: usize) {
 
     }
+
+    pub fn set_id(&mut self, id: u16) {
+        self.id = id;
+    }
+
+    pub fn get_id(&self) -> u16 {
+        self.id
+    }
+
+    pub fn set_qr(&mut self, qr: bool) {
+        self.qr = qr;
+    }
+
+    pub fn is_qr(&self) -> bool {
+        self.qr
+    }
+
+    pub fn set_op_code(&mut self, op_code: OpCodes) {
+        self.op_code = op_code;
+    }
+
+    pub fn get_op_code(&self) -> OpCodes {
+        self.op_code.clone()
+    }
+
+    pub fn set_origin(&mut self, origin: SocketAddr) {
+        self.origin = Some(origin);
+    }
+
+    pub fn get_origin(&self) -> Option<SocketAddr> {
+        self.origin
+    }
+
+    pub fn set_desitination(&mut self, desitination: SocketAddr) {
+        self.destination = Some(desitination);
+    }
+
+    pub fn get_desitination(&self) -> Option<SocketAddr> {
+        self.destination
+    }
 }
