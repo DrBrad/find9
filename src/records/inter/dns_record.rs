@@ -24,4 +24,6 @@ pub trait DnsRecord {
     fn set_query(&mut self, query: String);
 
     fn get_query(&self) -> Option<String>;
+
+    fn get_length(&self) -> usize;
 }

@@ -1,2 +1,2 @@
 pub mod inter;
-mod a_record;
+pub mod a_record;
