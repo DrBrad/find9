@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use crate::messages::inter::op_codes::OpCodes;
 use crate::messages::inter::response_codes::ResponseCodes;
@@ -103,25 +104,20 @@ impl MessageBase {
         buf[10] = (self.additional_records.len() >> 8) as u8;
         buf[11] = self.additional_records.len() as u8;
 
+        let mut query_map = HashMap::new();
         let mut offset = 12;
 
         for query in self.queries {
             let q = query.encode();
 
-            offset += q.len();
+            //System.arraycopy(q, 0, buf, offset, q.length);
+
+            let len = q.len();
+            query_map.insert(q, offset);
+            offset += len;
         }
 
         /*
-        Map<String, Integer> queryMap = new HashMap<>();
-        int offset = 12;
-
-        for(DnsQuery query : queries){
-            byte[] q = query.encode();
-            System.arraycopy(q, 0, buf, offset, q.length);
-            queryMap.put(query.getQuery(), offset);
-            offset += q.length;
-        }
-
         System.err.println(queries.size()+"  "+answers.size()+"  "+nameServers.size()+"  "+additionalRecords.size());
 
         for(DnsRecord record : answers){
