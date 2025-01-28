@@ -113,24 +113,25 @@ impl MessageBase {
             //System.arraycopy(q, 0, buf, offset, q.length);
 
             let len = q.len();
-            query_map.insert(q, offset);
+            query_map.insert(query.get_query(), offset);
             offset += len;
         }
 
-        /*
-        System.err.println(queries.size()+"  "+answers.size()+"  "+nameServers.size()+"  "+additionalRecords.size());
+        //System.err.println(queries.size()+"  "+answers.size()+"  "+nameServers.size()+"  "+additionalRecords.size());
 
-        for(DnsRecord record : answers){
-            int pointer = queryMap.get(record.getQuery());
-            buf[offset] = (byte) (pointer >> 8);
-            buf[offset+1] = (byte) pointer;
+        for record in self.answers {
+            match *query_map.get(&record.get_query().unwrap()) {
+                Some(pointer) => {
+                    buf[offset] = (pointer >> 8) as u8;
+                    buf[offset+1] = pointer as u8;
+                }
+                None => {}
+            }
 
-            byte[] q = record.encode();
-            System.arraycopy(q, 0, buf, offset+2, q.length);
-
-            offset += q.length+2;
+            let q = record.encode();
+            //System.arraycopy(q, 0, buf, offset+2, q.length);
+            offset += q.len()+2;
         }
-        */
 
         buf
     }
