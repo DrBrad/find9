@@ -1,6 +1,7 @@
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 
+#[derive(Clone)]
 pub struct DnsQuery {
     query: Option<String>,
     _type: Types,

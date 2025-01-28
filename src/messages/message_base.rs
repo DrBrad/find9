@@ -107,7 +107,7 @@ impl MessageBase {
         let mut query_map = HashMap::new();
         let mut offset = 12;
 
-        for query in self.queries {
+        for query in &self.queries {
             let q = query.encode();
 
             buf[offset..offset + q.len()].copy_from_slice(&q);
@@ -119,9 +119,9 @@ impl MessageBase {
 
         //System.err.println(queries.size()+"  "+answers.size()+"  "+nameServers.size()+"  "+additionalRecords.size());
 
-        for record in self.answers {
-            match *query_map.get(&record.get_query().unwrap()) {
-                Some(pointer) => {
+        for record in &self.answers {
+            match query_map.get(&record.get_query().unwrap()) {
+                Some(&pointer) => {
                     buf[offset] = (pointer >> 8) as u8;
                     buf[offset+1] = pointer as u8;
 
@@ -233,11 +233,12 @@ impl MessageBase {
         self.queries.clone()
     }
 
-    pub fn add_answers(&mut self, answers: &dyn DnsRecord) {
+    pub fn add_answers(&mut self, answers: Box<dyn DnsRecord>) {
         self.length += answers.get_length()+2;
-        self.answers.push(Box::new(answers));
+        self.answers.push(answers);
     }
 
+    /*
     pub fn get_answers(&self) -> Vec<Box<dyn DnsRecord>> {
         self.answers.clone()
     }
@@ -249,4 +250,5 @@ impl MessageBase {
     pub fn get_additional_records(&self) -> Vec<Box<dyn DnsRecord>> {
         self.additional_records.clone()
     }
+    */
 }
