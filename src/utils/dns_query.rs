@@ -1,6 +1,6 @@
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::utils::domain_utils::pack_domain;
+use crate::utils::domain_utils::{pack_domain, unpack_domain};
 
 #[derive(Clone)]
 pub struct DnsQuery {
@@ -48,7 +48,12 @@ impl DnsQuery {
     }
 
     pub fn decode(&mut self, buf: &[u8], off: usize) {
+        let query = unpack_domain(buf, off);
+        let off = off+query.len()+2;
 
+        self.query = Some(query);
+        self._type = Types::get_type_from_code((((buf[off] & 0xff) << 8) | (buf[off+1] & 0xff)) as u16).unwrap();
+        self.dns_class = DnsClasses::get_class_from_code((((buf[off+2] & 0xff) << 8) | (buf[off+3] & 0xff)) as u16).unwrap();
     }
 
     pub fn set_query(&mut self, query: String) {

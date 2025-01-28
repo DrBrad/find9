@@ -15,6 +15,6 @@ pub fn pack_domain(domain: &str) -> Vec<u8> {
     buf
 }
 
-pub fn unpack_domain(buf: &[u8], off: usize) -> Vec<u8> {
+pub fn unpack_domain(buf: &[u8], off: usize) -> String {
     todo!()
 }
