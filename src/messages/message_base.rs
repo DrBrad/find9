@@ -172,11 +172,11 @@ impl MessageBase {
         self.origin
     }
 
-    pub fn set_desitination(&mut self, desitination: SocketAddr) {
-        self.destination = Some(desitination);
+    pub fn set_destination(&mut self, destination: SocketAddr) {
+        self.destination = Some(destination);
     }
 
-    pub fn get_desitination(&self) -> Option<SocketAddr> {
+    pub fn get_destination(&self) -> Option<SocketAddr> {
         self.destination
     }
 }
