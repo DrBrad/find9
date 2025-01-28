@@ -5,6 +5,7 @@ use crate::records::inter::dns_record::DnsRecord;
 
 mod messages;
 mod records;
+mod utils;
 
 fn main() {
     println!("Hello, world!");

@@ -1,6 +1,8 @@
 use std::net::SocketAddr;
 use crate::messages::inter::op_codes::OpCodes;
 use crate::messages::inter::response_codes::ResponseCodes;
+use crate::records::inter::dns_record::DnsRecord;
+use crate::utils::dns_query::DnsQuery;
 
 /*
                                1  1  1  1  1  1
@@ -32,34 +34,15 @@ pub struct MessageBase {
     length: usize,
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
-    //queries: Vec<DnsQuery>,
-    //answers: Vec<DnsRecord>,
-    //nameservers: Vec<DnsRecord>,
-    //additional_records: Vec<DnsRecord>
+    queries: Vec<DnsQuery>,
+    answers: Vec<Box<dyn DnsRecord>>,
+    name_servers: Vec<Box<dyn DnsRecord>>,
+    additional_records: Vec<Box<dyn DnsRecord>>
 }
 
-impl From<u16> for MessageBase {
+impl Default for MessageBase {
 
-    fn from(id: u16) -> Self {
-        Self {
-            id,
-            op_code: OpCodes::Query,
-            response_code: ResponseCodes::NoError,
-            qr: false,
-            authoritative: false,
-            truncated: false,
-            recursion_desired: false,
-            recursion_available: false,
-            length: 12,
-            origin: None,
-            destination: None,
-        }
-    }
-}
-
-impl MessageBase {
-
-    pub fn new() -> Self {
+    fn default() -> Self {
         Self {
             id: 0,
             op_code: OpCodes::Query,
@@ -72,6 +55,20 @@ impl MessageBase {
             length: 12,
             origin: None,
             destination: None,
+            queries: Vec::new(),
+            answers: Vec::new(),
+            name_servers: Vec::new(),
+            additional_records: Vec::new()
+        }
+    }
+}
+
+impl MessageBase {
+
+    pub fn new(id: u16) -> Self {
+        Self {
+            id,
+            ..Default::default()
         }
     }
 
@@ -94,24 +91,27 @@ impl MessageBase {
         buf[2] = (flags >> 8) as u8;
         buf[3] = flags as u8;
 
+        buf[4] = (self.queries.len() >> 8) as u8;
+        buf[5] = self.queries.len() as u8;
+
+        buf[6] = (self.answers.len() >> 8) as u8;
+        buf[7] = self.answers.len() as u8;
+
+        buf[8] = (self.name_servers.len() >> 8) as u8;
+        buf[9] = self.name_servers.len() as u8;
+
+        buf[10] = (self.additional_records.len() >> 8) as u8;
+        buf[11] = self.additional_records.len() as u8;
+
+        let mut offset = 12;
+
+        for query in self.queries {
+            let q = query.encode();
+
+            offset += q.len();
+        }
 
         /*
-        // QDCOUNT (16 bits)
-        buf[4] = (byte) (queries.size() >> 8);
-        buf[5] = (byte) queries.size();
-
-        // ANCOUNT (16 bits)
-        buf[6] = (byte) (answers.size() >> 8);
-        buf[7] = (byte) answers.size();
-
-        // NSCOUNT (16 bits)
-        buf[8] = (byte) (nameServers.size() >> 8);
-        buf[9] = (byte) nameServers.size();
-
-        // ARCOUNT (16 bits)
-        buf[10] = (byte) (additionalRecords.size() >> 8);
-        buf[11] = (byte) additionalRecords.size();
-
         Map<String, Integer> queryMap = new HashMap<>();
         int offset = 12;
 
