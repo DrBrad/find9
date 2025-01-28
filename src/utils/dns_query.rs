@@ -52,8 +52,8 @@ impl DnsQuery {
         let off = off+query.len()+2;
 
         self.query = Some(query);
-        self._type = Types::get_type_from_code((((buf[off] & 0xff) << 8) | (buf[off+1] & 0xff)) as u16).unwrap();
-        self.dns_class = DnsClasses::get_class_from_code((((buf[off+2] & 0xff) << 8) | (buf[off+3] & 0xff)) as u16).unwrap();
+        self._type = Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off + 1] as u16)).unwrap();
+        self.dns_class = DnsClasses::get_class_from_code(((buf[off + 2] as u16) << 8) | (buf[off + 3] as u16)).unwrap();
     }
 
     pub fn set_query(&mut self, query: String) {
