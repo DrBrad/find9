@@ -6,9 +6,11 @@ pub fn pack_domain(domain: &str) -> Vec<u8> {
     for part in domain.split('.') {
         let addr = part.as_bytes();
         buf[offset] = addr.len() as u8;
-        //COPY
+        buf[offset + 1..offset + 1 + addr.len()].copy_from_slice(addr);
         offset += addr.len()+1;
     }
+
+    buf[offset] = 0x00;
 
     buf
 }

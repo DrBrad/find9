@@ -35,8 +35,7 @@ impl DnsQuery {
         let mut offset = 0;
 
         let address = pack_domain(self.query.as_ref().unwrap().as_str());
-
-        //COPY...
+        buf[offset..offset + address.len()].copy_from_slice(&address);
         offset += address.len();
 
         buf[offset] = (self._type.get_code() >> 8) as u8;
