@@ -110,7 +110,7 @@ impl MessageBase {
         for query in self.queries {
             let q = query.encode();
 
-            //System.arraycopy(q, 0, buf, offset, q.length);
+            buf[offset..offset + q.len()].copy_from_slice(&q);
 
             let len = q.len();
             query_map.insert(query.get_query(), offset);
@@ -124,13 +124,13 @@ impl MessageBase {
                 Some(pointer) => {
                     buf[offset] = (pointer >> 8) as u8;
                     buf[offset+1] = pointer as u8;
+
+                    let q = record.encode();
+                    buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
+                    offset += q.len()+2;
                 }
                 None => {}
             }
-
-            let q = record.encode();
-            //System.arraycopy(q, 0, buf, offset+2, q.length);
-            offset += q.len()+2;
         }
 
         buf
