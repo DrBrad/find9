@@ -7,16 +7,16 @@ pub enum OpCodes {
 impl OpCodes {
 
     pub fn get_op_from_code(code: u16) -> Result<Self, String> {
-        for value in [Self::Query, Self::IQuery, Self::Status] {
-            if value.value() == code {
-                return Ok(value);
+        for c in [Self::Query, Self::IQuery, Self::Status] {
+            if c.get_code() == code {
+                return Ok(c);
             }
         }
 
         Err(format!("Couldn't find for code: {}", code))
     }
 
-    pub fn value(&self) -> u16 {
+    pub fn get_code(&self) -> u16 {
         match self {
             Self::Query => 0,
             Self::IQuery => 1,

@@ -5,7 +5,7 @@ pub trait DnsRecord {
 
     fn encode(&self) -> Vec<u8>;
 
-    fn decode(buf: Vec<u8>, off: usize) -> Self;
+    fn decode(&mut self, buf: &[u8], off: usize);
 
     fn length(&self) -> usize;
 

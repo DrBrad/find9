@@ -15,16 +15,16 @@ pub enum Types {
 impl Types {
 
     pub fn get_type_from_code(code: u16) -> Result<Self, String> {
-        for value in [Self::A, Self::Aaaa, Self::Ns, Self::Cname, Self::Soa, Self::Ptr, Self::Mx, Self::Txt, Self::Srv, Self::Caa] {
-            if value.value() == code {
-                return Ok(value);
+        for c in [Self::A, Self::Aaaa, Self::Ns, Self::Cname, Self::Soa, Self::Ptr, Self::Mx, Self::Txt, Self::Srv, Self::Caa] {
+            if c.get_code() == code {
+                return Ok(c);
             }
         }
 
         Err(format!("Couldn't find for code: {}", code))
     }
 
-    pub fn value(&self) -> u16 {
+    pub fn get_code(&self) -> u16 {
         match self {
             Self::A => 1,
             Self::Aaaa => 28,

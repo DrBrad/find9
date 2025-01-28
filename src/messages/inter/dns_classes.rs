@@ -9,16 +9,16 @@ pub enum DnsClasses {
 impl DnsClasses {
 
     pub fn get_class_from_code(code: u16) -> Result<Self, String> {
-        for value in [Self::In, Self::Cs, Self::Ch, Self::Hs] {
-            if value.value() == code {
-                return Ok(value);
+        for c in [Self::In, Self::Cs, Self::Ch, Self::Hs] {
+            if c.get_code() == code {
+                return Ok(c);
             }
         }
 
         Err(format!("Couldn't find for code: {}", code))
     }
 
-    pub fn value(&self) -> u16 {
+    pub fn get_code(&self) -> u16 {
         match self {
             Self::In => 1,
             Self::Cs => 2,

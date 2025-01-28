@@ -17,11 +17,11 @@ impl DnsRecord for ARecord {
     fn encode(&self) -> Vec<u8> {
         let mut buf = vec![0u8; self.get_length()];
 
-        buf[0] = (self._type.value() >> 8) as u8;
-        buf[1] = self._type.value() as u8;
+        buf[0] = (self._type.get_code() >> 8) as u8;
+        buf[1] = self._type.get_code() as u8;
 
-        buf[2] = (self.dns_class.unwrap().value() >> 8) as u8;
-        buf[3] = self.dns_class.unwrap().value() as u8;
+        buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
+        buf[3] = self.dns_class.unwrap().get_code() as u8;
 
         buf[4] = (self.ttl >> 24) as u8;
         buf[5] = (self.ttl >> 16) as u8;
@@ -42,7 +42,7 @@ impl DnsRecord for ARecord {
         buf
     }
 
-    fn decode(buf: Vec<u8>, off: usize) -> Self {
+    fn decode(&mut self, buf: &[u8], off: usize) {
         todo!()
     }
 
