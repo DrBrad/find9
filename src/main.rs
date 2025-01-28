@@ -1,4 +1,4 @@
-use std::net::{IpAddr, Ipv4Addr};
+use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::records::a_record::ARecord;
 use crate::records::inter::dns_record::DnsRecord;
