@@ -113,7 +113,7 @@ impl MessageBase {
             buf[offset..offset + q.len()].copy_from_slice(&q);
 
             let len = q.len();
-            query_map.insert(query.get_query(), offset);
+            query_map.insert(query.get_query().unwrap(), offset);
             offset += len;
         }
 
@@ -178,5 +178,75 @@ impl MessageBase {
 
     pub fn get_destination(&self) -> Option<SocketAddr> {
         self.destination
+    }
+
+    pub fn set_authoritative(&mut self, authoritative: bool) {
+        self.authoritative = authoritative;
+    }
+
+    pub fn is_authoritative(&self) -> bool {
+        self.authoritative
+    }
+
+    pub fn set_truncated(&mut self, truncated: bool) {
+        self.truncated = truncated;
+    }
+
+    pub fn is_truncated(&self) -> bool {
+        self.truncated
+    }
+
+    pub fn set_recursion_desired(&mut self, recursion_desired: bool) {
+        self.recursion_desired = recursion_desired;
+    }
+
+    pub fn is_recursion_desired(&self) -> bool {
+        self.recursion_desired
+    }
+
+    pub fn set_recursion_available(&mut self, recursion_available: bool) {
+        self.recursion_available = recursion_available;
+    }
+
+    pub fn is_recursion_available(&self) -> bool {
+        self.recursion_available
+    }
+
+    pub fn set_response_code(&mut self, response_code: ResponseCodes) {
+        self.response_code = response_code;
+    }
+
+    pub fn get_response_code(&self) -> ResponseCodes {
+        self.response_code
+    }
+
+    pub fn total_queries(&self) -> usize {
+        self.queries.len()
+    }
+
+    pub fn add_query(&mut self, query: DnsQuery) {
+        self.length += query.get_length();
+        self.queries.push(query);
+    }
+
+    pub fn get_queries(&self) -> Vec<DnsQuery> {
+        self.queries.clone()
+    }
+
+    pub fn add_answers(&mut self, answers: &dyn DnsRecord) {
+        self.length += answers.get_length()+2;
+        self.answers.push(Box::new(answers));
+    }
+
+    pub fn get_answers(&self) -> Vec<Box<dyn DnsRecord>> {
+        self.answers.clone()
+    }
+
+    pub fn get_name_servers(&self) -> Vec<Box<dyn DnsRecord>> {
+        self.name_servers.clone()
+    }
+
+    pub fn get_additional_records(&self) -> Vec<Box<dyn DnsRecord>> {
+        self.additional_records.clone()
     }
 }
