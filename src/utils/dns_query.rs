@@ -47,13 +47,15 @@ impl DnsQuery {
         buf
     }
 
-    pub fn decode(&mut self, buf: &[u8], off: usize) {
+    pub fn decode(buf: &[u8], off: usize) -> Self {
         let query = unpack_domain(buf, off);
         let off = off+query.len()+2;
 
-        self.query = Some(query);
-        self._type = Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off + 1] as u16)).unwrap();
-        self.dns_class = DnsClasses::get_class_from_code(((buf[off + 2] as u16) << 8) | (buf[off + 3] as u16)).unwrap();
+        Self {
+            query: Some(query),
+            _type: Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off + 1] as u16)).unwrap(),
+            dns_class: DnsClasses::get_class_from_code(((buf[off + 2] as u16) << 8) | (buf[off + 3] as u16)).unwrap()
+        }
     }
 
     pub fn set_query(&mut self, query: String) {

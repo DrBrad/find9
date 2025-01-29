@@ -42,7 +42,7 @@ impl DnsRecord for ARecord {
         buf
     }
 
-    fn decode(&mut self, buf: &[u8], off: usize) {
+    fn decode(buf: &[u8], off: usize) -> Self {
         todo!()
     }
 

@@ -22,4 +22,14 @@ fn main() {
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
 
     println!("{:?}", message.encode());
+
+
+    /*
+    let query = DnsQuery::new("distributed.net", Types::A, DnsClasses::In);
+    let encoded = query.encode();
+    println!("{:?}", encoded);
+
+    let mut query = DnsQuery::decode(encoded.as_slice(), 0);
+    println!("{} {:?} {:?}", query.get_query().unwrap(), query.get_type().get_code(), query.get_dns_class().get_code());
+    */
 }
