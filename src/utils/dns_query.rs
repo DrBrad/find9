@@ -53,8 +53,8 @@ impl DnsQuery {
 
         Self {
             query: Some(query),
-            _type: Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off + 1] as u16)).unwrap(),
-            dns_class: DnsClasses::get_class_from_code(((buf[off + 2] as u16) << 8) | (buf[off + 3] as u16)).unwrap()
+            _type: Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap(),
+            dns_class: DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap()
         }
     }
 

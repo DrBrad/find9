@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
@@ -14,7 +14,7 @@ pub struct ARecord {
 
 impl DnsRecord for ARecord {
 
-    fn encode(&self) -> Vec<u8> {
+    fn encode(&self) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; self.get_length()];
 
         buf[0] = (self._type.get_code() >> 8) as u8;
@@ -37,13 +37,39 @@ impl DnsRecord for ARecord {
             }
         };
 
+        buf[8] = (address.len() >> 8) as u8;
+        buf[9] = address.len() as u8;
+
         buf[10..10 + address.len()].copy_from_slice(&address);
 
-        buf
+        Ok(buf)
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        todo!()
+        let _type = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+        let dns_class = ((buf[off+2] as u16) << 8) | (buf[off+3] as u16);
+
+        let ttl = ((buf[off+4] as u32) << 24) |
+                ((buf[off+5] as u32) << 16) |
+                ((buf[off+6] as u32) << 8) |
+                (buf[off+7] as u32);
+
+        let length = ((buf[off+8] as usize) << 8) | (buf[off+9] as usize);
+        let record = &buf[off + 10..off + 10 + length];
+
+        let address = match record.len() {
+            4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
+            16 => IpAddr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
+            _ => panic!("Invalid Inet Address")
+        };
+
+        Self {
+            _type: Types::get_type_from_code(_type).unwrap(),
+            dns_class: Some(DnsClasses::get_class_from_code(dns_class).unwrap()),
+            ttl,
+            query: None,
+            address: Some(address)
+        }
     }
 
     fn length(&self) -> usize {

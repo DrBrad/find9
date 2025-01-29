@@ -3,7 +3,7 @@ use crate::messages::inter::types::Types;
 
 pub trait DnsRecord {
 
-    fn encode(&self) -> Vec<u8>;
+    fn encode(&self) -> Result<Vec<u8>, String>;
 
     fn decode(buf: &[u8], off: usize) -> Self where Self: Sized;
 

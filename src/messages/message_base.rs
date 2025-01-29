@@ -122,12 +122,16 @@ impl MessageBase {
         for record in &self.answers {
             match query_map.get(&record.get_query().unwrap()) {
                 Some(&pointer) => {
-                    buf[offset] = (pointer >> 8) as u8;
-                    buf[offset+1] = pointer as u8;
+                    match record.encode() {
+                        Ok(q) => {
+                            buf[offset] = (pointer >> 8) as u8;
+                            buf[offset+1] = pointer as u8;
 
-                    let q = record.encode();
-                    buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
-                    offset += q.len()+2;
+                            buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
+                            offset += q.len()+2;
+                        }
+                        Err(_) => {}
+                    };
                 }
                 None => {}
             }

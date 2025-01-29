@@ -11,12 +11,19 @@ mod records;
 mod utils;
 
 fn main() {
+    /*
     let mut record = ARecord::new();
     record.set_dns_class(DnsClasses::In);
     record.set_address(IpAddr::from([127, 0, 0, 1]));
+    record.set_ttl(32);
 
-    println!("{:?}", record.encode());
+    let encoded = record.encode().unwrap();
 
+    println!("{:?}", encoded);
+
+    let record = ARecord::decode(&encoded, 0);
+    println!("{:?}", record.encode().unwrap());
+    */
 
     let mut message = MessageBase::new(20);
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
