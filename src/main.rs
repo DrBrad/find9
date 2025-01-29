@@ -11,8 +11,6 @@ mod records;
 mod utils;
 
 fn main() {
-    println!("Hello, world!");
-
     let mut record = ARecord::new();
     record.set_dns_class(DnsClasses::In);
     record.set_address(IpAddr::from([127, 0, 0, 1]));
@@ -24,5 +22,4 @@ fn main() {
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
 
     println!("{:?}", message.encode());
-
 }
