@@ -8,7 +8,6 @@ pub struct ARecord {
     _type: Types,
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    query: Option<String>,
     address: Option<IpAddr>
 }
 
@@ -46,8 +45,8 @@ impl DnsRecord for ARecord {
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        let _type = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
-        let dns_class = ((buf[off+2] as u16) << 8) | (buf[off+3] as u16);
+        let _type = Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap();
+        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap());
 
         let ttl = ((buf[off+4] as u32) << 24) |
                 ((buf[off+5] as u32) << 16) |
@@ -64,10 +63,9 @@ impl DnsRecord for ARecord {
         };
 
         Self {
-            _type: Types::get_type_from_code(_type).unwrap(),
-            dns_class: Some(DnsClasses::get_class_from_code(dns_class).unwrap()),
+            _type,
+            dns_class,
             ttl,
-            query: None,
             address: Some(address)
         }
     }
@@ -103,14 +101,6 @@ impl DnsRecord for ARecord {
         self.ttl
     }
 
-    fn set_query(&mut self, query: String) {
-        self.query = Some(query);
-    }
-
-    fn get_query(&self) -> Option<String> {
-        self.query.clone()
-    }
-
     fn get_length(&self) -> usize {
         let len = match self.address.unwrap() {
             IpAddr::V4(address) => {
@@ -132,7 +122,6 @@ impl ARecord {
             _type: Types::A,
             dns_class: None,
             ttl: 0,
-            query: None,
             address: None
         }
     }

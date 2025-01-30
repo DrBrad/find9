@@ -141,6 +141,11 @@ impl MessageBase {
     }
 
     pub fn decode(&self, buf: &[u8], off: usize) {
+        let id = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+        let qr = ((buf[off+2] >> 7) & 0x1) == 1;
+        let opcode = OpCodes::get_op_from_code(((buf[off+3] as u16) >> 3) ^ 0xf).unwrap();
+        let authoritative = ((buf[off+3] >> 2) & 0x1) == 1;
+
 
     }
 
