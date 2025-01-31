@@ -171,70 +171,30 @@ impl MessageBase {
         for i in 0..an_count {
             let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
             off += 2;
-            let query = unpack_domain(buf, pointer);
 
-            let record = match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
-                Types::A => {
-                    ARecord::decode(buf, off).dyn_clone()
-                }
-                Types::Aaaa => {
-                    todo!()
-                }
-                Types::Ns => {
-                    todo!()
-                }
-                Types::Cname => {
-                    todo!()
-                }
-                Types::Soa => {
-                    todo!()
-                }
-                Types::Ptr => {
-                    todo!()
-                }
-                Types::Mx => {
-                    todo!()
-                }
-                Types::Txt => {
-                    todo!()
-                }
-                Types::Srv => {
-                    todo!()
-                }
-                Types::Caa => {
-                    todo!()
-                }
-            };
-
-            answers.insert(query, record);
+            answers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
             off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
         }
 
-        /*
-        for(int i = 0; i < nsCount; i++){
-            int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
-            offset += 2;
-            String query = DomainUtils.unpackDomain(buf, pointer);
+        let mut name_servers = HashMap::new();
 
-            DnsRecord record = createRecordByType(Types.getTypeFromCode(((buf[offset] & 0xFF) << 8) | (buf[offset+1] & 0xFF)));
-            record.setQuery(query);
-            record.decode(buf, offset+2);
-            nameServers.add(record);
-            offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
+        for i in 0..ns_count {
+            let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
+            off += 2;
+
+            name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
+            off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
         }
 
-        for(int i = 0; i < arCount; i++){
-            int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
-            offset += 2;
-            String query = DomainUtils.unpackDomain(buf, pointer);
+        let mut additional_records = HashMap::new();
 
-            DnsRecord record = createRecordByType(Types.getTypeFromCode(((buf[offset] & 0xFF) << 8) | (buf[offset+1] & 0xFF)));
-            record.setQuery(query);
-            record.decode(buf, offset+2);
-            additionalRecords.add(record);
-            offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
+        for i in 0..ar_count {
+            let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
+            off += 2;
+
+            name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
+            off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
         }
-        */
 
         Self {
             id,
@@ -250,8 +210,43 @@ impl MessageBase {
             destination: None,
             queries,
             answers,
-            name_servers: HashMap::new(),
-            additional_records: HashMap::new()
+            name_servers,
+            additional_records
+        }
+    }
+
+    fn decode_record(buf: &[u8], off: usize) -> Box<dyn DnsRecord> {
+        match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
+            Types::A => {
+                ARecord::decode(buf, off).dyn_clone()
+            }
+            Types::Aaaa => {
+                todo!()
+            }
+            Types::Ns => {
+                todo!()
+            }
+            Types::Cname => {
+                todo!()
+            }
+            Types::Soa => {
+                todo!()
+            }
+            Types::Ptr => {
+                todo!()
+            }
+            Types::Mx => {
+                todo!()
+            }
+            Types::Txt => {
+                todo!()
+            }
+            Types::Srv => {
+                todo!()
+            }
+            Types::Caa => {
+                todo!()
+            }
         }
     }
 
