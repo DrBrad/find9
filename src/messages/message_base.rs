@@ -119,6 +119,7 @@ impl MessageBase {
 
         //System.err.println(queries.size()+"  "+answers.size()+"  "+nameServers.size()+"  "+additionalRecords.size());
 
+        /*
         for record in &self.answers {
             match query_map.get(&record.get_query().unwrap()) {
                 Some(&pointer) => {
@@ -136,17 +137,100 @@ impl MessageBase {
                 None => {}
             }
         }
+        */
 
         buf
     }
 
-    pub fn decode(&self, buf: &[u8], off: usize) {
+    pub fn decode(&self, buf: &[u8], off: usize) -> Self {
         let id = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
         let qr = ((buf[off+2] >> 7) & 0x1) == 1;
-        let opcode = OpCodes::get_op_from_code(((buf[off+3] as u16) >> 3) ^ 0xf).unwrap();
-        let authoritative = ((buf[off+3] >> 2) & 0x1) == 1;
+        let op_code = OpCodes::get_op_from_code(((buf[off+2] >> 3) & 0xF) as u16).unwrap();
+        let authoritative = ((buf[off+2] >> 2) & 0x1) == 1;
+        let truncated =  ((buf[off+2] >> 1) & 0x1) == 1;
+        let recursion_desired = (buf[off+2] & 0x1) == 1;
+        let recursion_available = ((buf[off+3] >> 7) & 0x1) == 1;
+        let z = (buf[off+3] >> 4) & 0x3;
+        let response_code = ResponseCodes::get_response_code_from_code((buf[off+3] & 0xf) as u16).unwrap();
 
+        let qd_count = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
+        let an_count = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
+        let ns_count = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
+        let ar_count = ((buf[off+10] as u16) << 8) | (buf[off+11] as u16);
 
+        let mut queries = Vec::new();
+        let mut off = 12;
+
+        for i in 0..qd_count {
+            let query = DnsQuery::decode(buf, off);
+            off += query.get_length();
+            queries.push(query);
+        }
+
+        /*
+        for(int i = 0; i < qdCount; i++){
+            DnsQuery query = new DnsQuery();
+            query.decode(buf, offset);
+            queries.add(query);
+            offset += query.getLength();
+        }
+
+        for(int i = 0; i < anCount; i++){
+            int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
+            offset += 2;
+            String query = DomainUtils.unpackDomain(buf, pointer);
+
+            DnsRecord record = createRecordByType(Types.getTypeFromCode(((buf[offset] & 0xFF) << 8) | (buf[offset+1] & 0xFF)));
+            record.setQuery(query);
+            record.decode(buf, offset+2);
+            answers.add(record);
+            offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
+        }
+
+        for(int i = 0; i < nsCount; i++){
+            int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
+            offset += 2;
+            String query = DomainUtils.unpackDomain(buf, pointer);
+
+            DnsRecord record = createRecordByType(Types.getTypeFromCode(((buf[offset] & 0xFF) << 8) | (buf[offset+1] & 0xFF)));
+            record.setQuery(query);
+            record.decode(buf, offset+2);
+            nameServers.add(record);
+            offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
+        }
+
+        for(int i = 0; i < arCount; i++){
+            int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
+            offset += 2;
+            String query = DomainUtils.unpackDomain(buf, pointer);
+
+            DnsRecord record = createRecordByType(Types.getTypeFromCode(((buf[offset] & 0xFF) << 8) | (buf[offset+1] & 0xFF)));
+            record.setQuery(query);
+            record.decode(buf, offset+2);
+            additionalRecords.add(record);
+            offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
+        }
+
+        length = offset;
+        */
+
+        Self {
+            id,
+            op_code,
+            response_code,
+            qr,
+            authoritative,
+            truncated,
+            recursion_desired,
+            recursion_available,
+            length: off,
+            origin: None,
+            destination: None,
+            queries,
+            answers: Vec::new(),
+            name_servers: Vec::new(),
+            additional_records: Vec::new()
+        }
     }
 
     pub fn set_id(&mut self, id: u16) {

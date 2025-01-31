@@ -28,8 +28,11 @@ fn main() {
     let mut message = MessageBase::new(20);
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
 
-    println!("{:?}", message.encode());
+    let encoded = message.encode();
+    println!("{:?}", encoded);
 
+    message.decode(&encoded, 0);
+    println!("{:?}", message.encode());
 
     /*
     let query = DnsQuery::new("distributed.net", Types::A, DnsClasses::In);
