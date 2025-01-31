@@ -98,8 +98,10 @@ impl MessageBase {
         buf[4] = (self.queries.len() >> 8) as u8;
         buf[5] = self.queries.len() as u8;
 
+        /*
         buf[6] = (self.answers.len() >> 8) as u8;
         buf[7] = self.answers.len() as u8;
+        */
 
         buf[8] = (self.name_servers.len() >> 8) as u8;
         buf[9] = self.name_servers.len() as u8;
@@ -120,6 +122,7 @@ impl MessageBase {
             offset += len;
         }
 
+        let mut i = 0;
         for (query, record) in &self.answers {
             match query_map.get(query) {
                 Some(&pointer) => {
@@ -130,6 +133,7 @@ impl MessageBase {
 
                             buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
                             offset += q.len()+2;
+                            i += 1;
                         }
                         Err(_) => {}
                     };
@@ -137,6 +141,9 @@ impl MessageBase {
                 None => {}
             }
         }
+
+        buf[6] = (i >> 8) as u8;
+        buf[7] = i as u8;
 
         buf
     }
