@@ -9,10 +9,6 @@ pub trait DnsRecord {
 
     fn length(&self) -> usize;
 
-    fn set_type(&mut self, _type: Types);
-
-    fn get_type(&self) -> Types;
-
     fn set_dns_class(&mut self, dns_class: DnsClasses);
 
     fn get_dns_class(&self) -> Result<DnsClasses, String>;
@@ -22,4 +18,12 @@ pub trait DnsRecord {
     fn get_ttl(&self) -> u32;
 
     fn get_length(&self) -> usize;
+
+    fn get_type(&self) -> Types;
+
+    fn upcast(&self) -> &dyn DnsRecord;
+
+    fn upcast_mut(&mut self) -> &mut dyn DnsRecord;
+
+    fn dyn_clone(&self) -> Box<dyn DnsRecord>;
 }

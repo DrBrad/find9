@@ -2,8 +2,11 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use crate::messages::inter::op_codes::OpCodes;
 use crate::messages::inter::response_codes::ResponseCodes;
+use crate::messages::inter::types::Types;
+use crate::records::a_record::ARecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
+use crate::utils::domain_utils::unpack_domain;
 
 /*
                                1  1  1  1  1  1
@@ -36,9 +39,9 @@ pub struct MessageBase {
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
     queries: Vec<DnsQuery>,
-    answers: Vec<Box<dyn DnsRecord>>,
-    name_servers: Vec<Box<dyn DnsRecord>>,
-    additional_records: Vec<Box<dyn DnsRecord>>
+    answers: HashMap<String, Box<dyn DnsRecord>>,
+    name_servers: HashMap<String, Box<dyn DnsRecord>>,
+    additional_records: HashMap<String, Box<dyn DnsRecord>>
 }
 
 impl Default for MessageBase {
@@ -57,9 +60,9 @@ impl Default for MessageBase {
             origin: None,
             destination: None,
             queries: Vec::new(),
-            answers: Vec::new(),
-            name_servers: Vec::new(),
-            additional_records: Vec::new()
+            answers: HashMap::new(),
+            name_servers: HashMap::new(),
+            additional_records: HashMap::new()
         }
     }
 }
@@ -81,13 +84,13 @@ impl MessageBase {
 
         let z = 0;
         let flags = (if self.qr { 0x8000 } else { 0 })
-            | ((self.op_code.get_code() & 0x0F) << 11)
-            | (if self.authoritative { 0x0400 } else { 0 })
-            | (if self.truncated { 0x0200 } else { 0 })
-            | (if self.recursion_desired { 0x0100 } else { 0 })
-            | (if self.recursion_available { 0x0080 } else { 0 })
-            | ((z & 0x07) << 4)
-            | (self.response_code.get_code() & 0x0F);
+                | ((self.op_code.get_code() & 0x0F) << 11)
+                | (if self.authoritative { 0x0400 } else { 0 })
+                | (if self.truncated { 0x0200 } else { 0 })
+                | (if self.recursion_desired { 0x0100 } else { 0 })
+                | (if self.recursion_available { 0x0080 } else { 0 })
+                | ((z & 0x07) << 4)
+                | (self.response_code.get_code() & 0x0F);
 
         buf[2] = (flags >> 8) as u8;
         buf[3] = flags as u8;
@@ -117,11 +120,8 @@ impl MessageBase {
             offset += len;
         }
 
-        //System.err.println(queries.size()+"  "+answers.size()+"  "+nameServers.size()+"  "+additionalRecords.size());
-
-        /*
-        for record in &self.answers {
-            match query_map.get(&record.get_query().unwrap()) {
+        for (query, record) in &self.answers {
+            match query_map.get(query) {
                 Some(&pointer) => {
                     match record.encode() {
                         Ok(q) => {
@@ -137,7 +137,6 @@ impl MessageBase {
                 None => {}
             }
         }
-        */
 
         buf
     }
@@ -167,26 +166,51 @@ impl MessageBase {
             queries.push(query);
         }
 
+        let mut answers = HashMap::new();
+
+        for i in 0..an_count {
+            let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
+            off += 2;
+            let query = unpack_domain(buf, pointer);
+
+            let record = match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
+                Types::A => {
+                    ARecord::decode(buf, off+2).dyn_clone()
+                }
+                Types::Aaaa => {
+                    todo!()
+                }
+                Types::Ns => {
+                    todo!()
+                }
+                Types::Cname => {
+                    todo!()
+                }
+                Types::Soa => {
+                    todo!()
+                }
+                Types::Ptr => {
+                    todo!()
+                }
+                Types::Mx => {
+                    todo!()
+                }
+                Types::Txt => {
+                    todo!()
+                }
+                Types::Srv => {
+                    todo!()
+                }
+                Types::Caa => {
+                    todo!()
+                }
+            };
+
+            answers.insert(query, record);
+            off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
+        }
+
         /*
-        for(int i = 0; i < qdCount; i++){
-            DnsQuery query = new DnsQuery();
-            query.decode(buf, offset);
-            queries.add(query);
-            offset += query.getLength();
-        }
-
-        for(int i = 0; i < anCount; i++){
-            int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
-            offset += 2;
-            String query = DomainUtils.unpackDomain(buf, pointer);
-
-            DnsRecord record = createRecordByType(Types.getTypeFromCode(((buf[offset] & 0xFF) << 8) | (buf[offset+1] & 0xFF)));
-            record.setQuery(query);
-            record.decode(buf, offset+2);
-            answers.add(record);
-            offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
-        }
-
         for(int i = 0; i < nsCount; i++){
             int pointer = (((buf[offset] & 0x3F) << 8) | (buf[offset+1] & 0xFF)) & 0x3FFF;
             offset += 2;
@@ -210,8 +234,6 @@ impl MessageBase {
             additionalRecords.add(record);
             offset += ((buf[offset+8] & 0xFF) << 8) | (buf[offset+9] & 0xFF)+10;
         }
-
-        length = offset;
         */
 
         Self {
@@ -227,9 +249,9 @@ impl MessageBase {
             origin: None,
             destination: None,
             queries,
-            answers: Vec::new(),
-            name_servers: Vec::new(),
-            additional_records: Vec::new()
+            answers,
+            name_servers: HashMap::new(),
+            additional_records: HashMap::new()
         }
     }
 
@@ -326,9 +348,9 @@ impl MessageBase {
         self.queries.clone()
     }
 
-    pub fn add_answers(&mut self, answers: Box<dyn DnsRecord>) {
-        self.length += answers.get_length()+2;
-        self.answers.push(answers);
+    pub fn add_answers(&mut self, key: &str, value: Box<dyn DnsRecord>) {
+        self.length += value.get_length()+2;
+        self.answers.insert(key.to_string(), value);
     }
 
     /*

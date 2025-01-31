@@ -1,14 +1,24 @@
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
 
 #[derive(Clone)]
 pub struct ARecord {
-    _type: Types,
     dns_class: Option<DnsClasses>,
     ttl: u32,
     address: Option<IpAddr>
+}
+
+impl Default for ARecord {
+
+    fn default() -> Self {
+        Self {
+            dns_class: None,
+            ttl: 0,
+            address: None
+        }
+    }
 }
 
 impl DnsRecord for ARecord {
@@ -16,8 +26,8 @@ impl DnsRecord for ARecord {
     fn encode(&self) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; self.get_length()];
 
-        buf[0] = (self._type.get_code() >> 8) as u8;
-        buf[1] = self._type.get_code() as u8;
+        buf[0] = (self.get_type().get_code() >> 8) as u8;
+        buf[1] = self.get_type().get_code() as u8;
 
         buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
         buf[3] = self.dns_class.unwrap().get_code() as u8;
@@ -63,7 +73,6 @@ impl DnsRecord for ARecord {
         };
 
         Self {
-            _type,
             dns_class,
             ttl,
             address: Some(address)
@@ -72,14 +81,6 @@ impl DnsRecord for ARecord {
 
     fn length(&self) -> usize {
         todo!()
-    }
-
-    fn set_type(&mut self, _type: Types) {
-        self._type = _type;
-    }
-
-    fn get_type(&self) -> Types {
-        self._type
     }
 
     fn set_dns_class(&mut self, dns_class: DnsClasses) {
@@ -113,16 +114,31 @@ impl DnsRecord for ARecord {
 
         len+10
     }
+
+    fn get_type(&self) -> Types {
+        Types::A
+    }
+
+    fn upcast(&self) -> &dyn DnsRecord {
+        self
+    }
+
+    fn upcast_mut(&mut self) -> &mut dyn DnsRecord {
+        self
+    }
+
+    fn dyn_clone(&self) -> Box<dyn DnsRecord> {
+        Box::new(self.clone())
+    }
 }
 
 impl ARecord {
 
-    pub fn new() -> Self {
+    pub fn new(dns_classes: DnsClasses, ttl: u32, address: IpAddr) -> Self {
         Self {
-            _type: Types::A,
-            dns_class: None,
-            ttl: 0,
-            address: None
+            dns_class: Some(dns_classes),
+            ttl,
+            address: Some(address)
         }
     }
 

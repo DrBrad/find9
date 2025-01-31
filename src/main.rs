@@ -10,6 +10,8 @@ mod messages;
 mod records;
 mod utils;
 
+//SHOULD THE RECORDS BE IN A HASH-MAP OR VECTOR....
+
 fn main() {
     /*
     let mut record = ARecord::new();
@@ -27,6 +29,7 @@ fn main() {
 
     let mut message = MessageBase::new(20);
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
+    //message.add_answers("distributed.net", ARecord::new(DnsClasses::In, 32, IpAddr::from([127, 0, 0, 1])).dyn_clone());
 
     let encoded = message.encode();
     println!("{:?}", encoded);
