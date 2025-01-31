@@ -101,13 +101,13 @@ impl MessageBase {
         /*
         buf[6] = (self.answers.len() >> 8) as u8;
         buf[7] = self.answers.len() as u8;
-        */
 
         buf[8] = (self.name_servers.len() >> 8) as u8;
         buf[9] = self.name_servers.len() as u8;
 
         buf[10] = (self.additional_records.len() >> 8) as u8;
         buf[11] = self.additional_records.len() as u8;
+        */
 
         let mut query_map = HashMap::new();
         let mut offset = 12;
@@ -144,6 +144,20 @@ impl MessageBase {
 
         buf[6] = (i >> 8) as u8;
         buf[7] = i as u8;
+
+        i = 0;
+
+        //FOR NAME SERVERS
+
+        buf[8] = (i >> 8) as u8;
+        buf[9] = i as u8;
+
+        i = 0;
+
+        //FOR ADDITIONAL RECORDS
+
+        buf[10] = (i >> 8) as u8;
+        buf[11] = i as u8;
 
         buf
     }
