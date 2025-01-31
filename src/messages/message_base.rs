@@ -175,7 +175,7 @@ impl MessageBase {
 
             let record = match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
                 Types::A => {
-                    ARecord::decode(buf, off+2).dyn_clone()
+                    ARecord::decode(buf, off).dyn_clone()
                 }
                 Types::Aaaa => {
                     todo!()
