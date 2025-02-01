@@ -165,7 +165,7 @@ impl MessageBase {
     pub fn decode(&self, buf: &[u8], off: usize) -> Self {
         let id = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
         let qr = ((buf[off+2] >> 7) & 0x1) == 1;
-        let op_code = OpCodes::get_op_from_code(((buf[off+2] >> 3) & 0xF) as u16).unwrap();
+        let op_code = OpCodes::get_op_from_code(((buf[off+2] >> 3) & 0xf) as u16).unwrap();
         let authoritative = ((buf[off+2] >> 2) & 0x1) == 1;
         let truncated =  ((buf[off+2] >> 1) & 0x1) == 1;
         let recursion_desired = (buf[off+2] & 0x1) == 1;
@@ -190,31 +190,31 @@ impl MessageBase {
         let mut answers = HashMap::new();
 
         for i in 0..an_count {
-            let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
+            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
             off += 2;
 
             answers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
-            off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
+            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
         }
 
         let mut name_servers = HashMap::new();
 
         for i in 0..ns_count {
-            let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
+            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
             off += 2;
 
             name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
-            off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
+            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
         }
 
         let mut additional_records = HashMap::new();
 
         for i in 0..ar_count {
-            let pointer = ((buf[off] as usize & 0x3F) << 8 | buf[off+1] as usize & 0xFF) & 0x3FFF;
+            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
             off += 2;
 
             name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
-            off += ((buf[off+8] as usize & 0xFF) << 8) | (buf[off+9] as usize & 0xFF)+10;
+            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
         }
 
         Self {
