@@ -4,6 +4,7 @@ use crate::messages::inter::op_codes::OpCodes;
 use crate::messages::inter::response_codes::ResponseCodes;
 use crate::messages::inter::types::Types;
 use crate::records::a_record::ARecord;
+use crate::records::aaaa_record::AAAARecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::unpack_domain;
@@ -242,7 +243,7 @@ impl MessageBase {
                 ARecord::decode(buf, off).dyn_clone()
             }
             Types::Aaaa => {
-                todo!()
+                AAAARecord::decode(buf, off).dyn_clone()
             }
             Types::Ns => {
                 todo!()

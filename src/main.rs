@@ -12,9 +12,7 @@ mod utils;
 
 //SHOULD THE RECORDS BE IN A HASH-MAP OR VECTOR....
 
-//should message decode return self type
-
-//
+//We may want to handle query to answers differently as we may want to query with a and aaaa types...
 
 fn main() {
     /*
@@ -34,7 +32,8 @@ fn main() {
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
     let mut message = MessageBase::new(20);
-    message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
+    message.add_query(DnsQuery::new("github.com", Types::A, DnsClasses::In));
+    //message.add_query(DnsQuery::new("github.com", Types::Aaaa, DnsClasses::In));
 
     socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
 
