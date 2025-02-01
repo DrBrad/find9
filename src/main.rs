@@ -1,4 +1,4 @@
-use std::net::IpAddr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::messages::message_base::MessageBase;
@@ -11,6 +11,10 @@ mod records;
 mod utils;
 
 //SHOULD THE RECORDS BE IN A HASH-MAP OR VECTOR....
+
+//should message decode return self type
+
+//
 
 fn main() {
     /*
@@ -27,6 +31,24 @@ fn main() {
     println!("{:?}", record.encode().unwrap());
     */
 
+    let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
+
+    let mut message = MessageBase::new(20);
+    message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
+
+    socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
+
+    let mut buf = [0u8; 65535];
+    match socket.recv_from(&mut buf) {
+        Ok((size, src_addr)) => {
+            let message = MessageBase::decode(&buf, 0);
+            println!("{:?}", message.encode());
+        }
+        _ => {}
+    }
+
+
+    /*
     let mut message = MessageBase::new(20);
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
     message.add_answers("distributed.net", ARecord::new(DnsClasses::In, 32, IpAddr::from([127, 0, 0, 1])).dyn_clone());
@@ -36,6 +58,7 @@ fn main() {
 
     message.decode(&encoded, 0);
     println!("{:?}", message.encode());
+    */
 
     /*
     let query = DnsQuery::new("distributed.net", Types::A, DnsClasses::In);
