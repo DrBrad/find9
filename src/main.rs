@@ -34,7 +34,7 @@ fn main() {
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
     let mut message = MessageBase::new(20);
-    message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
+    message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
 
     socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
 
@@ -43,6 +43,23 @@ fn main() {
         Ok((size, src_addr)) => {
             let message = MessageBase::decode(&buf, 0);
             println!("{:?}", message.encode());
+
+            for query in message.get_queries() {
+                println!("QR: {} {}", query.get_query().unwrap(), query.get_type().get_code());
+            }
+
+            for (key, record) in message.get_answers() {
+                let arecord = record.as_any().downcast_ref::<ARecord>().unwrap();
+                println!("AN: {} {} {} {:?}", key, record.get_type().get_code(), record.get_ttl(), arecord.get_address().unwrap());
+            }
+
+            for (key, record) in message.get_name_servers() {
+                println!("NS: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
+            }
+
+            for (key, record) in message.get_additional_records() {
+                println!("AR: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
+            }
         }
         _ => {}
     }

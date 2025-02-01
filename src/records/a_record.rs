@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
@@ -117,6 +118,14 @@ impl DnsRecord for ARecord {
 
     fn get_type(&self) -> Types {
         Types::A
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
     }
 
     fn upcast(&self) -> &dyn DnsRecord {

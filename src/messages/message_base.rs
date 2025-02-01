@@ -369,17 +369,15 @@ impl MessageBase {
         self.answers.insert(key.to_string(), value);
     }
 
-    /*
-    pub fn get_answers(&self) -> Vec<Box<dyn DnsRecord>> {
-        self.answers.clone()
+    pub fn get_answers(&self) -> &HashMap<String, Box<dyn DnsRecord>> {
+        &self.answers
     }
 
-    pub fn get_name_servers(&self) -> Vec<Box<dyn DnsRecord>> {
-        self.name_servers.clone()
+    pub fn get_name_servers(&self) -> &HashMap<String, Box<dyn DnsRecord>> {
+        &self.name_servers
     }
 
-    pub fn get_additional_records(&self) -> Vec<Box<dyn DnsRecord>> {
-        self.additional_records.clone()
+    pub fn get_additional_records(&self) -> &HashMap<String, Box<dyn DnsRecord>> {
+        &self.additional_records
     }
-    */
 }

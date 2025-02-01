@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 
@@ -20,6 +21,10 @@ pub trait DnsRecord {
     fn get_length(&self) -> usize;
 
     fn get_type(&self) -> Types;
+
+    fn as_any(&self) -> &dyn Any;
+
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 
     fn upcast(&self) -> &dyn DnsRecord;
 
