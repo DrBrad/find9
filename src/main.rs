@@ -32,7 +32,6 @@ fn main() {
 
 
 
-    /*
     let hex_data: Vec<u8> = vec![
         /*0x1c, 0xce, 0x51, 0x34, 0x00, 0x9f, 0x3c, 0x52, 0xa1, 0x12, 0xa4, 0x50, 0x08, 0x00, 0x45, 0x00,
         0x01, 0x11, 0x4f, 0x34, 0x00, 0x00, 0x3d, 0x11, 0xab, 0xd5, 0xc0, 0xa8, 0x00, 0x01, 0xc0, 0xa8,
@@ -54,13 +53,13 @@ fn main() {
         0x28, 0x63, 0xfd, 0x82, 0x00, 0x00, 0x29, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     ];
 
-    println!("{:?}", hex_data);
 
     let mut message = MessageBase::decode(&hex_data, 0);
-    //println!("{:?}", message.encode());
-    */
+    println!("{:?}", hex_data);
+    println!("{:?}", message.encode());
 
 
+    /*
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
     let mut message = MessageBase::new(20);
@@ -79,7 +78,7 @@ fn main() {
             let message = MessageBase::decode(&buf, 0);
             println!("{:?}", message.encode());
 
-            /*
+            /.*
             for query in message.get_queries() {
                 println!("QR: {} {}", query.get_query().unwrap(), query.get_type().get_code());
             }
@@ -96,10 +95,11 @@ fn main() {
             for (key, record) in message.get_additional_records() {
                 println!("AR: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
             }
-            */
+            *./
         }
         _ => {}
     }
+    */
 
 
 

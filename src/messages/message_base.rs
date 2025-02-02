@@ -8,7 +8,7 @@ use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
-use crate::utils::domain_utils::unpack_domain;
+use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_domain};
 
 /*
                                1  1  1  1  1  1
@@ -41,9 +41,9 @@ pub struct MessageBase {
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
     queries: Vec<DnsQuery>,
-    answers: HashMap<String, Box<dyn DnsRecord>>,
-    name_servers: HashMap<String, Box<dyn DnsRecord>>,
-    additional_records: HashMap<String, Box<dyn DnsRecord>>
+    answers: HashMap<String, Vec<Box<dyn DnsRecord>>>,
+    name_servers: Vec<Box<dyn DnsRecord>>,
+    additional_records: Vec<Box<dyn DnsRecord>>
 }
 
 impl Default for MessageBase {
@@ -63,8 +63,8 @@ impl Default for MessageBase {
             destination: None,
             queries: Vec::new(),
             answers: HashMap::new(),
-            name_servers: HashMap::new(),
-            additional_records: HashMap::new()
+            name_servers: Vec::new(),
+            additional_records: Vec::new()
         }
     }
 }
@@ -111,7 +111,7 @@ impl MessageBase {
         buf[11] = self.additional_records.len() as u8;
         */
 
-        let mut query_map = HashMap::new();
+        let mut label_map = HashMap::new();
         let mut offset = 12;
 
         for query in &self.queries {
@@ -120,12 +120,53 @@ impl MessageBase {
             buf[offset..offset + q.len()].copy_from_slice(&q);
 
             let len = q.len();
-            query_map.insert(query.get_query().unwrap(), offset);
+            label_map.insert(query.get_query().unwrap(), offset);
             offset += len;
         }
 
         //NOT IDEAL AS WHAT ABOUT 2 FOR THE SAME QUERY...
 
+        let mut i = 0;
+
+        for (query, records) in &self.answers {
+            for record in records {
+
+                /*
+                match label_map.get(query) {
+                    Some(&pointer) => {
+                        match record.encode() {
+                            Ok(q) => {
+                                buf[offset] = (pointer >> 8) as u8;
+                                buf[offset+1] = pointer as u8;
+
+                                buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
+                                offset += q.len()+2;
+                            }
+                            Err(_) => {}
+                        };
+                    }
+                    None => {}
+                }
+                */
+                i += 1;
+            }
+        }
+
+        buf[6] = (i >> 8) as u8;
+        buf[7] = i as u8;
+
+        i = 0;
+
+
+
+
+
+        i = 1;
+
+        buf[10] = (i >> 8) as u8;
+        buf[11] = i as u8;
+
+        /*
         let mut i = 0;
         for (query, record) in &self.answers {
             match query_map.get(query) {
@@ -162,6 +203,7 @@ impl MessageBase {
 
         buf[10] = (i >> 8) as u8;
         buf[11] = i as u8;
+        */
 
         buf
     }
@@ -204,27 +246,25 @@ impl MessageBase {
             queries.push(query);
         }
 
-        let mut answers = HashMap::new();
+        let mut answers: HashMap<String, Vec<Box<dyn DnsRecord>>> = HashMap::new();
 
-        for i in 0..an_count {
+        for _ in 0..an_count {
             let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
             off += 2;
 
+            let (domain, length) = unpack_domain(buf, pointer);
             let record = Self::decode_record(buf, off);
-            println!("{:?}: {}", unpack_domain(buf, pointer), record.to_string());
-            let (query, length) = unpack_domain(buf, pointer);
-            answers.insert(query, record);
-            //answers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
+            println!("{}: {}", domain, record.to_string());
+
+            answers.entry(domain).or_insert_with(Vec::new).push(record);
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-            //break;
         }
 
 
 
-
         //TEMPORARY
-        let mut name_servers = HashMap::new();
-        let mut additional_records = HashMap::new();
+        let mut name_servers = Vec::new();
+        let mut additional_records = Vec::new();
 
 
 
@@ -400,20 +440,27 @@ impl MessageBase {
         self.queries.clone()
     }
 
-    pub fn add_answers(&mut self, key: &str, value: Box<dyn DnsRecord>) {
-        self.length += value.get_length()+2;
-        self.answers.insert(key.to_string(), value);
+    pub fn add_answers(&mut self, query: &str, record: Box<dyn DnsRecord>) {
+        self.length += record.get_length()+2;
+
+        if self.answers.contains_key(&query.to_string()) {
+            self.answers.get_mut(&query.to_string()).unwrap().push(record);
+            return;
+        }
+
+        //self.answers.push(record);
     }
 
-    pub fn get_answers(&self) -> &HashMap<String, Box<dyn DnsRecord>> {
+    /*
+    pub fn get_answers(&self) -> &Vec<Box<dyn DnsRecord>> {
         &self.answers
-    }
+    }*/
 
-    pub fn get_name_servers(&self) -> &HashMap<String, Box<dyn DnsRecord>> {
+    pub fn get_name_servers(&self) -> &Vec<Box<dyn DnsRecord>> {
         &self.name_servers
     }
 
-    pub fn get_additional_records(&self) -> &HashMap<String, Box<dyn DnsRecord>> {
+    pub fn get_additional_records(&self) -> &Vec<Box<dyn DnsRecord>> {
         &self.additional_records
     }
 }

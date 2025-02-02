@@ -16,6 +16,47 @@ pub fn pack_domain(domain: &str) -> Vec<u8> {
     buf
 }
 
+pub fn pack_domain_with_pointers(domain: &str, labels_map: &HashMap<String, usize>) -> Vec<u8> {
+    /*
+    let mut buf = vec![0u8; domain.len()+2];
+    let mut offset = 0;
+
+    for part in domain.split('.') {
+        let addr = part.as_bytes();
+        buf[offset] = addr.len() as u8;
+        buf[offset + 1..offset + 1 + addr.len()].copy_from_slice(addr);
+        offset += addr.len()+1;
+    }
+
+    buf[offset] = 0x00;
+
+    buf
+    */
+
+    let mut buffer = Vec::new();
+    //let mut offset = 0;
+    let mut buf = vec![0u8; domain.len() + 2];
+    let mut local_offset = 0;
+
+    for part in domain.split('.') {
+        let suffix = domain[local_offset..].to_string();
+        if let Some(&ptr_offset) = labels_map.get(&suffix) {
+            buffer.extend_from_slice(&[(0xC0 | (ptr_offset >> 8)) as u8, (ptr_offset & 0xFF) as u8]);
+            return buffer;
+        }
+        //labels_map.insert(suffix, offset + local_offset);
+
+        let addr = part.as_bytes();
+        buf[local_offset] = addr.len() as u8;
+        buf[local_offset + 1..local_offset + 1 + addr.len()].copy_from_slice(addr);
+        local_offset += addr.len() + 1;
+    }
+
+    buf[local_offset] = 0x00;
+    buffer.extend_from_slice(&buf[..local_offset + 1]);
+    buffer
+}
+
 pub fn unpack_domain(buf: &[u8], off: usize) -> (String, usize) {
     let mut builder = String::new();
     let mut pos = off;

@@ -1,4 +1,3 @@
-use std::any::Any;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
