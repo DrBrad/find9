@@ -131,7 +131,7 @@ impl DnsRecord for ARecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, addr: {}", Types::A, self.dns_class, self.address.unwrap().to_string())
+        format!("[RECORD] type {:?}, class {:?}, addr: {}", Types::A, self.dns_class.unwrap(), self.address.unwrap().to_string())
     }
 }
 

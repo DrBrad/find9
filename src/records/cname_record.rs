@@ -115,7 +115,7 @@ impl DnsRecord for CNameRecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, cname: {}", Types::Cname, self.dns_class, self.domain.as_ref().unwrap())
+        format!("[RECORD] type {:?}, class {:?}, cname: {}", Types::Cname, self.dns_class.unwrap(), self.domain.as_ref().unwrap())
     }
 }
 

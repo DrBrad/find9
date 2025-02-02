@@ -30,7 +30,7 @@ impl DnsQuery {
             query: Some(query.to_string()),
             _type,
             dns_class,
-            length: query.len()+4
+            length: query.len()+6
         }
     }
 
