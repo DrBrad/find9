@@ -1,33 +1,33 @@
 use std::any::Any;
-use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
+use crate::utils::domain_utils::{pack_domain, unpack_domain};
 
 #[derive(Clone)]
-pub struct AAAARecord {
+pub struct CNameRecord {
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    address: Option<IpAddr>,
+    domain: Option<String>,
     length: usize
 }
 
-impl Default for AAAARecord {
+impl Default for CNameRecord {
 
     fn default() -> Self {
         Self {
             dns_class: None,
             ttl: 0,
-            address: None,
-            length: 10
+            domain: None,
+            length: 8
         }
     }
 }
 
-impl DnsRecord for AAAARecord {
+impl DnsRecord for CNameRecord {
 
     fn encode(&self) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; self.get_length()];
+        let mut buf = vec![0u8; self.length];
 
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;
@@ -40,19 +40,8 @@ impl DnsRecord for AAAARecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let address = match self.address.unwrap() {
-            IpAddr::V4(address) => {
-                address.octets().to_vec()
-            }
-            IpAddr::V6(address) => {
-                address.octets().to_vec()
-            }
-        };
-
-        buf[8] = (address.len() >> 8) as u8;
-        buf[9] = address.len() as u8;
-
-        buf[10..10 + address.len()].copy_from_slice(&address);
+        let domain = pack_domain(self.domain.as_ref().unwrap().as_str());
+        buf[8..8 + domain.len()].copy_from_slice(&domain);
 
         Ok(buf)
     }
@@ -66,20 +55,14 @@ impl DnsRecord for AAAARecord {
             ((buf[off+6] as u32) << 8) |
             (buf[off+7] as u32);
 
-        let length = ((buf[off+8] as usize) << 8) | (buf[off+9] as usize);
-        let record = &buf[off + 10..off + 10 + length];
-
-        let address = match record.len() {
-            4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
-            16 => IpAddr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
-            _ => panic!("Invalid Inet Address")
-        };
+        let domain = unpack_domain(buf, off+8);
+        let length = domain.len()+10;
 
         Self {
             dns_class,
             ttl,
-            address: Some(address),
-            length: length+10
+            domain: Some(domain),
+            length
         }
     }
 
@@ -131,41 +114,23 @@ impl DnsRecord for AAAARecord {
     }
 }
 
-impl AAAARecord {
+impl CNameRecord {
 
-    pub fn new(dns_classes: DnsClasses, ttl: u32, address: IpAddr) -> Self {
-        let length = match address {
-            IpAddr::V4(address) => {
-                address.octets().len()
-            }
-            IpAddr::V6(address) => {
-                address.octets().len()
-            }
-        };
-
+    pub fn new(dns_classes: DnsClasses, ttl: u32, domain: &str) -> Self {
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            address: Some(address),
-            length: length+10
+            domain: Some(domain.to_string()),
+            length: domain.len()+10
         }
     }
 
-    pub fn set_address(&mut self, address: IpAddr) {
-        let length = match self.address.unwrap() {
-            IpAddr::V4(address) => {
-                address.octets().len()
-            }
-            IpAddr::V6(address) => {
-                address.octets().len()
-            }
-        };
-
-        self.address = Some(address);
-        self.length = length+10;
+    pub fn set_domain(&mut self, domain: &str) {
+        self.domain = Some(domain.to_string());
+        self.length = domain.len()+10;
     }
 
-    pub fn get_address(&self) -> Option<IpAddr> {
-        self.address
+    pub fn get_domain(&self) -> Option<String> {
+        self.domain.clone()
     }
 }

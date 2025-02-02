@@ -8,7 +8,8 @@ use crate::records::inter::dns_record::DnsRecord;
 pub struct ARecord {
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    address: Option<IpAddr>
+    address: Option<IpAddr>,
+    length: usize
 }
 
 impl Default for ARecord {
@@ -17,7 +18,8 @@ impl Default for ARecord {
         Self {
             dns_class: None,
             ttl: 0,
-            address: None
+            address: None,
+            length: 10
         }
     }
 }
@@ -76,12 +78,13 @@ impl DnsRecord for ARecord {
         Self {
             dns_class,
             ttl,
-            address: Some(address)
+            address: Some(address),
+            length: length+10
         }
     }
 
-    fn length(&self) -> usize {
-        todo!()
+    fn get_length(&self) -> usize {
+        self.length
     }
 
     fn set_dns_class(&mut self, dns_class: DnsClasses) {
@@ -101,19 +104,6 @@ impl DnsRecord for ARecord {
 
     fn get_ttl(&self) -> u32 {
         self.ttl
-    }
-
-    fn get_length(&self) -> usize {
-        let len = match self.address.unwrap() {
-            IpAddr::V4(address) => {
-                address.octets().len()
-            }
-            IpAddr::V6(address) => {
-                address.octets().len()
-            }
-        };
-
-        len+10
     }
 
     fn get_type(&self) -> Types {
@@ -144,15 +134,35 @@ impl DnsRecord for ARecord {
 impl ARecord {
 
     pub fn new(dns_classes: DnsClasses, ttl: u32, address: IpAddr) -> Self {
+        let length = match address {
+            IpAddr::V4(address) => {
+                address.octets().len()
+            }
+            IpAddr::V6(address) => {
+                address.octets().len()
+            }
+        };
+
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            address: Some(address)
+            address: Some(address),
+            length: length+10
         }
     }
 
     pub fn set_address(&mut self, address: IpAddr) {
+        let length = match self.address.unwrap() {
+            IpAddr::V4(address) => {
+                address.octets().len()
+            }
+            IpAddr::V6(address) => {
+                address.octets().len()
+            }
+        };
+
         self.address = Some(address);
+        self.length = length+10;
     }
 
     pub fn get_address(&self) -> Option<IpAddr> {

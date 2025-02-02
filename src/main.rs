@@ -32,8 +32,12 @@ fn main() {
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
     let mut message = MessageBase::new(20);
-    message.add_query(DnsQuery::new("github.com", Types::A, DnsClasses::In));
+    message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("github.com", Types::Aaaa, DnsClasses::In));
+
+
+    let encoded = message.encode();
+    println!("{:?}", encoded);
 
     socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
 
@@ -48,8 +52,8 @@ fn main() {
             }
 
             for (key, record) in message.get_answers() {
-                let arecord = record.as_any().downcast_ref::<ARecord>().unwrap();
-                println!("AN: {} {} {} {:?}", key, record.get_type().get_code(), record.get_ttl(), arecord.get_address().unwrap());
+                //let arecord = record.as_any().downcast_ref::<ARecord>().unwrap();
+                println!("AN: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
             }
 
             for (key, record) in message.get_name_servers() {
@@ -64,6 +68,7 @@ fn main() {
     }
 
 
+
     /*
     let mut message = MessageBase::new(20);
     message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
@@ -72,7 +77,7 @@ fn main() {
     let encoded = message.encode();
     println!("{:?}", encoded);
 
-    message.decode(&encoded, 0);
+    let mut message = MessageBase::decode(&encoded, 0);
     println!("{:?}", message.encode());
     */
 

@@ -5,6 +5,7 @@ use crate::messages::inter::response_codes::ResponseCodes;
 use crate::messages::inter::types::Types;
 use crate::records::a_record::ARecord;
 use crate::records::aaaa_record::AAAARecord;
+use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::unpack_domain;
@@ -123,6 +124,8 @@ impl MessageBase {
             offset += len;
         }
 
+        //NOT IDEAL AS WHAT ABOUT 2 FOR THE SAME QUERY...
+
         let mut i = 0;
         for (query, record) in &self.answers {
             match query_map.get(query) {
@@ -173,6 +176,16 @@ impl MessageBase {
         let recursion_available = ((buf[off+3] >> 7) & 0x1) == 1;
         let z = (buf[off+3] >> 4) & 0x3;
         let response_code = ResponseCodes::get_response_code_from_code((buf[off+3] & 0xf) as u16).unwrap();
+        println!("ID: {} QR: {} OP_CODE: {} AUTH: {} TRUN: {} REC_DES: {} REC_AVA: {} Z: {} RES_CODE: {}",
+                id,
+                qr,
+                op_code.get_code(),
+                authoritative,
+                truncated,
+                recursion_desired,
+                recursion_available,
+                z,
+                response_code.get_code());
 
         let qd_count = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
         let an_count = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
@@ -249,7 +262,7 @@ impl MessageBase {
                 todo!()
             }
             Types::Cname => {
-                todo!()
+                CNameRecord::decode(buf, off).dyn_clone()
             }
             Types::Soa => {
                 todo!()
