@@ -55,16 +55,15 @@ impl DnsRecord for CNameRecord {
             ((buf[off+6] as u32) << 8) |
             (buf[off+7] as u32);
 
-        let domain = unpack_domain(buf, off+8);
-        let length = domain.len()+10;
+        let z = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
 
-        println!("{} {} {}", domain, off, length);
+        let (domain, length) = unpack_domain(buf, off+10);
 
         Self {
             dns_class,
             ttl,
             domain: Some(domain),
-            length
+            length: length+10
         }
     }
 

@@ -7,7 +7,8 @@ use crate::utils::domain_utils::{pack_domain, unpack_domain};
 pub struct DnsQuery {
     query: Option<String>,
     _type: Types,
-    dns_class: DnsClasses
+    dns_class: DnsClasses,
+    length: usize
 }
 
 impl Default for DnsQuery {
@@ -16,7 +17,8 @@ impl Default for DnsQuery {
         Self {
             query: None,
             _type: Types::A,
-            dns_class: DnsClasses::In
+            dns_class: DnsClasses::In,
+            length: 4
         }
     }
 }
@@ -27,12 +29,13 @@ impl DnsQuery {
         Self {
             query: Some(query.to_string()),
             _type,
-            dns_class
+            dns_class,
+            length: query.len()+4
         }
     }
 
     pub fn encode(&self) -> Vec<u8> {
-        let mut buf = vec![0u8; self.get_length()];
+        let mut buf = vec![0u8; self.length];
         let mut offset = 0;
 
         let address = pack_domain(self.query.as_ref().unwrap().as_str());
@@ -49,13 +52,14 @@ impl DnsQuery {
     }
 
     pub fn decode(buf: &[u8], off: usize) -> Self {
-        let query = unpack_domain(buf, off);
-        let off = off+query.len()+2;
+        let (query, length) = unpack_domain(buf, off);
+        let off = off+length;
 
         Self {
             query: Some(query),
             _type: Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap(),
-            dns_class: DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap()
+            dns_class: DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap(),
+            length: length+4
         }
     }
 
@@ -87,7 +91,7 @@ impl DnsQuery {
     }
 
     pub fn get_length(&self) -> usize {
-        self.query.as_ref().unwrap().as_bytes().len()+6
+        self.length
     }
 
     pub fn to_string(&self) -> String {

@@ -211,8 +211,9 @@ impl MessageBase {
             off += 2;
 
             let record = Self::decode_record(buf, off);
-            println!("{}: {}", unpack_domain(buf, pointer), record.to_string());
-            answers.insert(unpack_domain(buf, pointer), record);
+            println!("{:?}: {}", unpack_domain(buf, pointer), record.to_string());
+            let (query, length) = unpack_domain(buf, pointer);
+            answers.insert(query, record);
             //answers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
             //break;

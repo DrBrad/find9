@@ -27,7 +27,7 @@ impl Default for ARecord {
 impl DnsRecord for ARecord {
 
     fn encode(&self) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; self.get_length()];
+        let mut buf = vec![0u8; self.length];
 
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;

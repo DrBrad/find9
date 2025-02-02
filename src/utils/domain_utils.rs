@@ -1,3 +1,4 @@
+use std::collections::{HashMap, HashSet};
 
 pub fn pack_domain(domain: &str) -> Vec<u8> {
     let mut buf = vec![0u8; domain.len()+2];
@@ -15,38 +16,76 @@ pub fn pack_domain(domain: &str) -> Vec<u8> {
     buf
 }
 
-pub fn unpack_domain(buf: &[u8], off: usize) -> String {
+pub fn unpack_domain(buf: &[u8], off: usize) -> (String, usize) {
     let mut builder = String::new();
-    let mut off = off;
+    let mut pos = off;
 
-    while off < buf.len() {
-        let length = buf[off] as usize;
-        off += 1;
+    while pos < buf.len() {
+        let length = buf[pos] as usize;
+        pos += 1;
 
         if length == 0 {
             break;
         }
 
         if (length & 0xc0) == 0xc0 {
-            if off >= buf.len() {
+            if pos >= buf.len() {
                 break;
             }
-            off = ((length & 0x3f) << 8) | (buf[off] as usize);
+            pos = ((length & 0x3f) << 8) | (buf[pos] as usize);
 
         } else {
             if !builder.is_empty() {
                 builder.push('.');
             }
 
-            if off + length > buf.len() {
+            if pos + length > buf.len() {
                 break;
             }
 
-            let label = &buf[off..off + length];
+            let label = &buf[pos..pos + length];
             builder.push_str(&String::from_utf8_lossy(label));
-            off += length;
+            pos += length;
         }
     }
 
-    builder
+    let length = builder.len()+2;
+
+    (builder, length)
+
+    /*
+    let mut name = String::new();
+    let mut pos = offset;
+    let mut jumped = false;
+    let mut seen_offsets = HashSet::new();
+
+    while pos < buffer.len() {
+        if seen_offsets.contains(&pos) {
+            break;
+        }
+        seen_offsets.insert(pos);
+
+        let len = buffer[pos] as usize;
+        if len == 0 {
+            pos += 1;
+            break;
+        }
+
+        if len & 0xC0 == 0xC0 {
+            let ptr_offset = (((len as u16 & 0x3F) << 8) | buffer[pos + 1] as u16) as usize;
+            pos += 2;
+            return (name, pos - offset);
+
+        } else {
+            pos += 1;
+            if !name.is_empty() {
+                name.push('.');
+            }
+            name.push_str(&String::from_utf8_lossy(&buffer[pos..pos + len]));
+            pos += len;
+        }
+    }
+
+    (name, pos - offset)
+    */
 }
