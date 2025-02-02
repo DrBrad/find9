@@ -41,7 +41,7 @@ impl DnsRecord for CNameRecord {
         buf[7] = self.ttl as u8;
 
         let domain = pack_domain(self.domain.as_ref().unwrap().as_str());
-        buf[8..8 + domain.len()].copy_from_slice(&domain);
+        buf[10..10 + domain.len()].copy_from_slice(&domain);
 
         Ok(buf)
     }
