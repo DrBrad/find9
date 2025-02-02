@@ -29,4 +29,6 @@ pub trait DnsRecord {
     fn upcast_mut(&mut self) -> &mut dyn DnsRecord;
 
     fn dyn_clone(&self) -> Box<dyn DnsRecord>;
+
+    fn to_string(&self) -> String;
 }

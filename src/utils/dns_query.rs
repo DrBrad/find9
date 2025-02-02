@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
@@ -87,5 +88,9 @@ impl DnsQuery {
 
     pub fn get_length(&self) -> usize {
         self.query.as_ref().unwrap().as_bytes().len()+6
+    }
+
+    pub fn to_string(&self) -> String {
+        format!("[QUERY] {}: type {:?}, class {:?}", self.query.as_ref().unwrap(), self._type, self.dns_class)
     }
 }

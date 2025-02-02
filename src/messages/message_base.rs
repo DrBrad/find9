@@ -192,12 +192,15 @@ impl MessageBase {
         let ns_count = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
         let ar_count = ((buf[off+10] as u16) << 8) | (buf[off+11] as u16);
 
+        println!("{} {} {} {}", qd_count, an_count, ns_count, ar_count);
+
         let mut queries = Vec::new();
         let mut off = 12;
 
         for i in 0..qd_count {
             let query = DnsQuery::decode(buf, off);
             off += query.get_length();
+            println!("{}", query.to_string());
             queries.push(query);
         }
 
@@ -207,10 +210,25 @@ impl MessageBase {
             let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
             off += 2;
 
-            answers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
+            let record = Self::decode_record(buf, off);
+            println!("{}: {}", unpack_domain(buf, pointer), record.to_string());
+            answers.insert(unpack_domain(buf, pointer), record);
+            //answers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
+            //break;
         }
 
+
+
+
+        //TEMPORARY
+        let mut name_servers = HashMap::new();
+        let mut additional_records = HashMap::new();
+
+
+
+
+        /*
         let mut name_servers = HashMap::new();
 
         for i in 0..ns_count {
@@ -219,6 +237,7 @@ impl MessageBase {
 
             name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
+            break;
         }
 
         let mut additional_records = HashMap::new();
@@ -229,7 +248,9 @@ impl MessageBase {
 
             name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
+            break;
         }
+        */
 
         Self {
             id,

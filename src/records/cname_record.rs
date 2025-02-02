@@ -58,6 +58,8 @@ impl DnsRecord for CNameRecord {
         let domain = unpack_domain(buf, off+8);
         let length = domain.len()+10;
 
+        println!("{} {} {}", domain, off, length);
+
         Self {
             dns_class,
             ttl,
@@ -111,6 +113,10 @@ impl DnsRecord for CNameRecord {
 
     fn dyn_clone(&self) -> Box<dyn DnsRecord> {
         Box::new(self.clone())
+    }
+
+    fn to_string(&self) -> String {
+        format!("[RECORD] type {:?}, class {:?}, cname: {}", Types::Cname, self.dns_class, self.domain.as_ref().unwrap())
     }
 }
 

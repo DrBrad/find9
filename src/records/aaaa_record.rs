@@ -129,6 +129,10 @@ impl DnsRecord for AAAARecord {
     fn dyn_clone(&self) -> Box<dyn DnsRecord> {
         Box::new(self.clone())
     }
+
+    fn to_string(&self) -> String {
+        format!("[RECORD] type {:?}, class {:?}, addr: {}", Types::Aaaa, self.dns_class, self.address.unwrap().to_string())
+    }
 }
 
 impl AAAARecord {
