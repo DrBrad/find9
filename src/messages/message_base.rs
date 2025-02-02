@@ -9,7 +9,8 @@ use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_domain};
-
+use crate::utils::linked_hashmap::LinkedHashMap;
+use crate::utils::ordered_map::OrderedMap;
 /*
                                1  1  1  1  1  1
  0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
@@ -41,7 +42,7 @@ pub struct MessageBase {
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
     queries: Vec<DnsQuery>,
-    answers: HashMap<String, Vec<Box<dyn DnsRecord>>>,
+    answers: OrderedMap<String, Vec<Box<dyn DnsRecord>>>,
     name_servers: Vec<Box<dyn DnsRecord>>,
     additional_records: Vec<Box<dyn DnsRecord>>
 }
@@ -62,7 +63,7 @@ impl Default for MessageBase {
             origin: None,
             destination: None,
             queries: Vec::new(),
-            answers: HashMap::new(),
+            answers: OrderedMap::new(),
             name_servers: Vec::new(),
             additional_records: Vec::new()
         }
@@ -127,9 +128,29 @@ impl MessageBase {
         //NOT IDEAL AS WHAT ABOUT 2 FOR THE SAME QUERY...
 
         let mut i = 0;
+        //println!("{} {}", self.answers.get(&"outlook.office.com".to_string()).unwrap().len(), self.answers.len());
 
-        for (query, records) in &self.answers {
+        for (query, records) in self.answers.iter() {
+            println!("RUNNING");
             for record in records {
+                match record.encode() {
+                    Ok(e) => {
+                        //let pack = pack_domain_with_pointers(query, &label_map);
+                        //buf[offset..offset + pack.len()].copy_from_slice(&pack);
+                        //offset += 4;//pack.len();
+                        println!("{}: {}", query, record.to_string());
+                        buf[offset] = 0xc0;
+                        buf[offset + 1] = 0x0c;
+
+                        buf[offset + 2..offset + 2 + e.len()].copy_from_slice(&e);
+                        offset += e.len();
+                    }
+                    Err(_) => {}
+                }
+
+
+
+                break;
 
                 /*
                 match label_map.get(query) {
@@ -150,7 +171,10 @@ impl MessageBase {
                 */
                 i += 1;
             }
+            break;
         }
+
+        i = 9;
 
         buf[6] = (i >> 8) as u8;
         buf[7] = i as u8;
@@ -246,7 +270,7 @@ impl MessageBase {
             queries.push(query);
         }
 
-        let mut answers: HashMap<String, Vec<Box<dyn DnsRecord>>> = HashMap::new();
+        let mut answers: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
 
         for _ in 0..an_count {
             let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
@@ -258,8 +282,24 @@ impl MessageBase {
 
             answers.entry(domain).or_insert_with(Vec::new).push(record);
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-        }
 
+
+
+
+            /*
+            if answers.contains_key(&domain) {
+                answers.get_mut(&domain).unwrap().push(record);
+                continue;
+            }
+
+            let mut records = Vec::new();
+            records.push(record);
+
+            answers.insert(domain, records);
+
+            //off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
+            */
+        }
 
 
         //TEMPORARY

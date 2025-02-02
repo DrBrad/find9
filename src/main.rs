@@ -55,8 +55,9 @@ fn main() {
 
 
     let mut message = MessageBase::decode(&hex_data, 0);
-    println!("{:?}", hex_data);
-    println!("{:?}", message.encode());
+    println!("{:x?}", hex_data);
+    println!("");
+    println!("{:x?}", message.encode());
 
 
     /*

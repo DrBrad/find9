@@ -91,7 +91,7 @@ impl DnsRecord for CNameRecord {
     }
 
     fn get_type(&self) -> Types {
-        Types::A
+        Types::Cname
     }
 
     fn as_any(&self) -> &dyn Any {
