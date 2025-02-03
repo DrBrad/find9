@@ -8,6 +8,7 @@ use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::records::opt_record::OptRecord;
+use crate::records::txt_record::TxtRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
 use crate::utils::ordered_map::OrderedMap;
@@ -215,7 +216,7 @@ impl MessageBase {
             for record in records {
                 match record.encode(label_map, off) {
                     Ok(e) => {
-                        println!("{}: {}", query, record.to_string());
+                        //println!("{}: {}", query, record.to_string());
                         match query.len() {
                             0 => {
                                 buf.push(0);
@@ -280,7 +281,7 @@ impl MessageBase {
                     todo!()
                 }
                 Types::Txt => {
-                    todo!()
+                    TxtRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Srv => {
                     todo!()

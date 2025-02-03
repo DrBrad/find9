@@ -10,28 +10,10 @@ mod messages;
 mod records;
 mod utils;
 
-//SHOULD THE RECORDS BE IN A HASH-MAP OR VECTOR....
-
-//We may want to handle query to answers differently as we may want to query with a and aaaa types...
+//GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
 
 fn main() {
     /*
-    let mut record = ARecord::new();
-    record.set_dns_class(DnsClasses::In);
-    record.set_address(IpAddr::from([127, 0, 0, 1]));
-    record.set_ttl(32);
-
-    let encoded = record.encode().unwrap();
-
-    println!("{:?}", encoded);
-
-    let record = ARecord::decode(&encoded, 0);
-    println!("{:?}", record.encode().unwrap());
-    */
-
-
-
-
     let hex_data: Vec<u8> = vec![
         0xaf, 0xcc, 0x81, 0x80, 0x00, 0x01, 0x00, 0x09, 0x00, 0x00, 0x00, 0x01, 0x07, 0x6f, 0x75, 0x74,
         0x6c, 0x6f, 0x6f, 0x6b, 0x06, 0x6f, 0x66, 0x66, 0x69, 0x63, 0x65, 0x03, 0x63, 0x6f, 0x6d, 0x00,
@@ -51,18 +33,18 @@ fn main() {
         0x00, 0x00, 0x00, 0x00, 0x00
     ];
 
-
     let mut message = MessageBase::decode(&hex_data, 0);
     println!("{:x?}", hex_data);
     println!("");
     println!("{:x?}", message.encode());
+    */
 
 
-    /*
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
     let mut message = MessageBase::new(20);
-    message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
+    //message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
+    message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
     message.set_recursion_desired(true);
 
     //message.add_query(DnsQuery::new("github.com", Types::Aaaa, DnsClasses::In));
@@ -73,36 +55,16 @@ fn main() {
 
     socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
 
-    let mut buf = [0u8; 65535];
+    let mut buf = [0u8; 512];
     match socket.recv_from(&mut buf) {
         Ok((size, src_addr)) => {
-            println!("{:?}", buf);
+            //println!("{:?}", buf);
 
             let message = MessageBase::decode(&buf, 0);
             println!("{:?}", message.encode());
-
-            /.*
-            for query in message.get_queries() {
-                println!("QR: {} {}", query.get_query().unwrap(), query.get_type().get_code());
-            }
-
-            for (key, record) in message.get_answers() {
-                //let arecord = record.as_any().downcast_ref::<ARecord>().unwrap();
-                println!("AN: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
-            }
-
-            for (key, record) in message.get_name_servers() {
-                println!("NS: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
-            }
-
-            for (key, record) in message.get_additional_records() {
-                println!("AR: {} {} {}", key, record.get_type().get_code(), record.get_ttl());
-            }
-            *./
         }
         _ => {}
     }
-    */
 
 
 
