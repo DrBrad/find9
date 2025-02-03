@@ -231,9 +231,14 @@ impl MessageBase {
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
         }
         */
-        let answers = Self::decode_records(buf, off, an_count);
-        let name_servers = Self::decode_records(buf, off, ns_count);
-        let additional_records = Self::decode_records(buf, off, ar_count);
+        let (answers, length) = Self::decode_records(buf, off, an_count);
+        off += length;
+
+        let (name_servers, length) = Self::decode_records(buf, off, ns_count);
+        off += length;
+
+        let (additional_records, length) = Self::decode_records(buf, off, ar_count);
+        off += length;
 
         Self {
             id,
@@ -281,27 +286,27 @@ impl MessageBase {
         (buf, i)
     }
 
-    fn decode_records(buf: &[u8], off: usize, count: u16) -> OrderedMap<String, Vec<Box<dyn DnsRecord>>> {
+    fn decode_records(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn DnsRecord>>>, usize) {
         let mut records: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
-        let mut off = off;
+        let mut pos = off;
 
         for _ in 0..count {
-            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
-            off += 2;
+            let pointer = ((buf[pos] as usize & 0x3f) << 8 | buf[pos+1] as usize & 0xff) & 0x3fff;
+            pos += 2;
 
             let (domain, length) = unpack_domain(buf, pointer);
-            let record = match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
+            let record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
                 Types::A => {
-                    ARecord::decode(buf, off).dyn_clone()
+                    ARecord::decode(buf, pos).dyn_clone()
                 }
                 Types::Aaaa => {
-                    AAAARecord::decode(buf, off).dyn_clone()
+                    AAAARecord::decode(buf, pos).dyn_clone()
                 }
                 Types::Ns => {
                     todo!()
                 }
                 Types::Cname => {
-                    CNameRecord::decode(buf, off).dyn_clone()
+                    CNameRecord::decode(buf, pos).dyn_clone()
                 }
                 Types::Soa => {
                     todo!()
@@ -325,10 +330,10 @@ impl MessageBase {
             println!("{}: {}", domain, record.to_string());
 
             records.entry(domain).or_insert_with(Vec::new).push(record);
-            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
+            pos += ((buf[pos+8] as usize & 0xff) << 8) | (buf[pos+9] as usize & 0xff)+10;
         }
 
-        records
+        (records, pos-off)
     }
 
     pub fn set_id(&mut self, id: u16) {
