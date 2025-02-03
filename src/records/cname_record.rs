@@ -42,7 +42,7 @@ impl DnsRecord for CNameRecord {
         buf[7] = self.ttl as u8;
 
         let mut label_map = HashMap::new();
-        label_map.insert("office".to_string(), 20);
+        label_map.insert("office.com".to_string(), 20);
 
         //9, 73, 75, 62, 73, 74, 72, 61, 74, 65, c0, 14
         let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), &label_map);
