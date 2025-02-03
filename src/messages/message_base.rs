@@ -323,6 +323,9 @@ impl MessageBase {
                 Types::Srv => {
                     todo!()
                 }
+                Types::Otp => {
+                    todo!()
+                }
                 Types::Caa => {
                     todo!()
                 }

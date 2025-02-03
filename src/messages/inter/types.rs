@@ -9,13 +9,14 @@ pub enum Types {
     Mx,
     Txt,
     Srv,
+    Otp,
     Caa
 }
 
 impl Types {
 
     pub fn get_type_from_code(code: u16) -> Result<Self, String> {
-        for c in [Self::A, Self::Aaaa, Self::Ns, Self::Cname, Self::Soa, Self::Ptr, Self::Mx, Self::Txt, Self::Srv, Self::Caa] {
+        for c in [Self::A, Self::Aaaa, Self::Ns, Self::Cname, Self::Soa, Self::Ptr, Self::Mx, Self::Txt, Self::Otp, Self::Srv, Self::Caa] {
             if c.get_code() == code {
                 return Ok(c);
             }
@@ -35,6 +36,7 @@ impl Types {
             Self::Mx => 15,
             Self::Txt => 16,
             Self::Srv => 33,
+            Self::Otp => 41,
             Self::Caa => 257
         }
     }

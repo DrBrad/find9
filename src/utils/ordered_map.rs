@@ -62,7 +62,6 @@ impl<K, V> OrderedMap<K, V> where K: Eq + Hash + Clone {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        println!("ITER: {} {}", self.keys.len(), self.map.len());
         self.keys.iter().filter_map(move |key| {
             let value = self.map.get(key)?;
             Some((key, value))

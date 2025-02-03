@@ -7,3 +7,4 @@ pub mod ns_record;
 pub mod ptr_record;
 pub mod soa_record;
 pub mod txt_record;
+pub mod otp_record;
