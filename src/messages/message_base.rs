@@ -8,8 +8,7 @@ use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
-use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_domain};
-use crate::utils::linked_hashmap::LinkedHashMap;
+use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
 use crate::utils::ordered_map::OrderedMap;
 /*
                                1  1  1  1  1  1
@@ -237,8 +236,8 @@ impl MessageBase {
         let (name_servers, length) = Self::decode_records(buf, off, ns_count);
         off += length;
 
-        let additional_records = OrderedMap::new();
-        //let (additional_records, length) = Self::decode_records(buf, off, ar_count);
+        //let additional_records = OrderedMap::new();
+        let (additional_records, length) = Self::decode_records(buf, off, ar_count);
         off += length;
 
         Self {
@@ -292,10 +291,19 @@ impl MessageBase {
         let mut pos = off;
 
         for _ in 0..count {
-            let pointer = ((buf[pos] as usize & 0x3f) << 8 | buf[pos+1] as usize & 0xff) & 0x3fff;
-            pos += 2;
+            let mut domain = String::new();
 
-            let (domain, length) = unpack_domain(buf, pointer);
+            match buf[pos] {
+                0 => {
+                    pos += 1;
+                }
+                _ => {
+                    let pointer = ((buf[pos] as usize & 0x3f) << 8 | buf[pos+1] as usize & 0xff) & 0x3fff;
+                    (domain, _) = unpack_domain(buf, pointer);
+                    pos += 2;
+                }
+            }
+
             let record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
                 Types::A => {
                     ARecord::decode(buf, pos).dyn_clone()

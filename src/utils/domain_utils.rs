@@ -1,5 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
+/*
 pub fn pack_domain(domain: &str) -> Vec<u8> {
     let mut buf = vec![0u8; domain.len()+2];
     let mut offset = 0;
@@ -15,6 +16,7 @@ pub fn pack_domain(domain: &str) -> Vec<u8> {
 
     buf
 }
+*/
 
 pub fn pack_domain_with_pointers(domain: &str, labels_map: &mut HashMap<String, usize>, off: usize) -> Vec<u8> {
     let mut buf = Vec::new();//vec![0u8; domain.len()+2];
@@ -78,40 +80,4 @@ pub fn unpack_domain(buf: &[u8], off: usize) -> (String, usize) {
     let length = builder.len()+2;
 
     (builder, length)
-
-    /*
-    let mut name = String::new();
-    let mut pos = offset;
-    let mut jumped = false;
-    let mut seen_offsets = HashSet::new();
-
-    while pos < buffer.len() {
-        if seen_offsets.contains(&pos) {
-            break;
-        }
-        seen_offsets.insert(pos);
-
-        let len = buffer[pos] as usize;
-        if len == 0 {
-            pos += 1;
-            break;
-        }
-
-        if len & 0xC0 == 0xC0 {
-            let ptr_offset = (((len as u16 & 0x3F) << 8) | buffer[pos + 1] as u16) as usize;
-            pos += 2;
-            return (name, pos - offset);
-
-        } else {
-            pos += 1;
-            if !name.is_empty() {
-                name.push('.');
-            }
-            name.push_str(&String::from_utf8_lossy(&buffer[pos..pos + len]));
-            pos += len;
-        }
-    }
-
-    (name, pos - offset)
-    */
 }

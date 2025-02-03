@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
-use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_domain};
+use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
 
 #[derive(Clone)]
 pub struct CNameRecord {
