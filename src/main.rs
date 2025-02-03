@@ -51,7 +51,7 @@ fn main() {
 
 
     let encoded = message.encode();
-    println!("{:?}", encoded);
+    println!("{:?}", &encoded);
 
     socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
 
@@ -61,7 +61,7 @@ fn main() {
             //println!("{:?}", buf);
 
             let message = MessageBase::decode(&buf, 0);
-            println!("{:?}", message.encode());
+            println!("{:?}", &message.encode());
         }
         _ => {}
     }
