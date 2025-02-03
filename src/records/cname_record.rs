@@ -1,8 +1,9 @@
 use std::any::Any;
+use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
-use crate::utils::domain_utils::{pack_domain, unpack_domain};
+use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_domain};
 
 #[derive(Clone)]
 pub struct CNameRecord {
@@ -40,8 +41,20 @@ impl DnsRecord for CNameRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let domain = pack_domain(self.domain.as_ref().unwrap().as_str());
+        let mut label_map = HashMap::new();
+        label_map.insert("office".to_string(), 20);
+
+        //9, 73, 75, 62, 73, 74, 72, 61, 74, 65, c0, 14
+        let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), &label_map);
+        println!("{:x?}", domain);
         buf[10..10 + domain.len()].copy_from_slice(&domain);
+
+        buf[8] = (domain.len() >> 8) as u8;
+        buf[9] = domain.len() as u8;
+
+
+        //let domain = pack_domain(self.domain.as_ref().unwrap().as_str());
+        //buf[10..10 + domain.len()].copy_from_slice(&domain);
 
         Ok(buf)
     }
