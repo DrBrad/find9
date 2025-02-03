@@ -27,7 +27,7 @@ impl Default for CNameRecord {
 
 impl DnsRecord for CNameRecord {
 
-    fn encode(&self) -> Result<Vec<u8>, String> {
+    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; self.length];
 
         buf[0] = (self.get_type().get_code() >> 8) as u8;
@@ -41,11 +41,11 @@ impl DnsRecord for CNameRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let mut label_map = HashMap::new();
-        label_map.insert("office.com".to_string(), 20);
+        //let mut label_map = HashMap::new();
+        //label_map.insert("office.com".to_string(), 20);
 
         //9, 73, 75, 62, 73, 74, 72, 61, 74, 65, c0, 14
-        let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), &label_map);
+        let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
         println!("{:x?}", domain);
         buf[10..10 + domain.len()].copy_from_slice(&domain);
 

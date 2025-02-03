@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::collections::HashMap;
 use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
@@ -26,7 +27,7 @@ impl Default for ARecord {
 
 impl DnsRecord for ARecord {
 
-    fn encode(&self) -> Result<Vec<u8>, String> {
+    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; self.length];
 
         buf[0] = (self.get_type().get_code() >> 8) as u8;

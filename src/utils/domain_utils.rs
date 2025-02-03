@@ -16,9 +16,9 @@ pub fn pack_domain(domain: &str) -> Vec<u8> {
     buf
 }
 
-pub fn pack_domain_with_pointers(domain: &str, labels_map: &HashMap<String, usize>) -> Vec<u8> {
+pub fn pack_domain_with_pointers(domain: &str, labels_map: &mut HashMap<String, usize>, off: usize) -> Vec<u8> {
     let mut buf = Vec::new();//vec![0u8; domain.len()+2];
-    let mut offset = 0;
+    let mut off = off;
 
     let parts: Vec<&str> = domain.split('.').collect();
 
@@ -33,9 +33,11 @@ pub fn pack_domain_with_pointers(domain: &str, labels_map: &HashMap<String, usiz
         let addr = parts.get(i).unwrap().as_bytes();
         buf.push(addr.len() as u8);
         buf.extend_from_slice(addr);
+        labels_map.insert(label.clone(), off);
+        off += addr.len()+1;
     }
 
-    //buf[offset] = 0x00;
+    buf.push(0x00);
 
     buf
 }

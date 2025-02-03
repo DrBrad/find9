@@ -116,12 +116,12 @@ impl MessageBase {
         let mut offset = 12;
 
         for query in &self.queries {
-            let q = query.encode();
+            let q = query.encode(&mut label_map, offset);
 
             buf[offset..offset + q.len()].copy_from_slice(&q);
 
             let len = q.len();
-            label_map.insert(query.get_query().unwrap(), offset);
+           // label_map.insert(query.get_query().unwrap(), offset);
             offset += len;
         }
 
@@ -133,16 +133,19 @@ impl MessageBase {
         for (query, records) in self.answers.iter() {
             println!("RUNNING");
             for record in records {
-                match record.encode() {
+                match record.encode(&mut label_map, offset) {
                     Ok(e) => {
                         //let pack = pack_domain_with_pointers(query, &label_map);
                         //buf[offset..offset + pack.len()].copy_from_slice(&pack);
                         //offset += 4;//pack.len();
                         println!("{}: {}", query, record.to_string());
-                        buf[offset] = 0xc0;
-                        buf[offset + 1] = 0x0c;
+                        //buf[offset] = 0xc0;
+                        //buf[offset + 1] = 0x0c;
+                        let eq = pack_domain_with_pointers(query, &mut label_map, offset);
+                        buf[offset..offset + eq.len()].copy_from_slice(&eq);
+                        offset += eq.len();
 
-                        buf[offset + 2..offset + 2 + e.len()].copy_from_slice(&e);
+                        buf[offset..offset + e.len()].copy_from_slice(&e);
                         offset += e.len();
                     }
                     Err(_) => {}
@@ -150,7 +153,7 @@ impl MessageBase {
 
 
 
-                break;
+                //break;
 
                 /*
                 match label_map.get(query) {
@@ -170,11 +173,19 @@ impl MessageBase {
                 }
                 */
                 i += 1;
+
+                if i > 1 {
+                    break;
+                }
             }
-            break;
+
+            if i > 1 {
+                break;
+            }
+            //break;
         }
 
-        i = 9;
+        //i = 9;
 
         buf[6] = (i >> 8) as u8;
         buf[7] = i as u8;

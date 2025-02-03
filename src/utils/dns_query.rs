@@ -1,6 +1,7 @@
+use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::utils::domain_utils::{pack_domain, unpack_domain};
+use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_domain};
 
 #[derive(Clone)]
 pub struct DnsQuery {
@@ -33,11 +34,11 @@ impl DnsQuery {
         }
     }
 
-    pub fn encode(&self) -> Vec<u8> {
+    pub fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Vec<u8> {
         let mut buf = vec![0u8; self.length];
         let mut offset = 0;
 
-        let address = pack_domain(self.query.as_ref().unwrap().as_str());
+        let address = pack_domain_with_pointers(self.query.as_ref().unwrap().as_str(), label_map, off);
         buf[offset..offset + address.len()].copy_from_slice(&address);
         offset += address.len();
 
