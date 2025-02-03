@@ -173,14 +173,6 @@ impl MessageBase {
                 }
                 */
                 i += 1;
-
-                if i > 1 {
-                    break;
-                }
-            }
-
-            if i > 1 {
-                break;
             }
             //break;
         }

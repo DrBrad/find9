@@ -28,8 +28,20 @@ impl Default for CNameRecord {
 impl DnsRecord for CNameRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; self.length];
+        let mut buf = Vec::new();//vec![0u8; self.length];
 
+        buf.extend_from_slice(&[(self.get_type().get_code() >> 8) as u8, self.get_type().get_code() as u8]);
+
+        buf.extend_from_slice(&[(self.dns_class.unwrap().get_code() >> 8) as u8, self.dns_class.unwrap().get_code() as u8]);
+
+        buf.extend_from_slice(&[
+            (self.ttl >> 24) as u8,
+            (self.ttl >> 16) as u8,
+            (self.ttl >> 8) as u8,
+            self.ttl as u8
+        ]);
+
+        /*
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;
 
@@ -40,18 +52,22 @@ impl DnsRecord for CNameRecord {
         buf[5] = (self.ttl >> 16) as u8;
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
+        */
 
         //let mut label_map = HashMap::new();
         //label_map.insert("office.com".to_string(), 20);
 
         //9, 73, 75, 62, 73, 74, 72, 61, 74, 65, c0, 14
-        let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
+        let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
         println!("{:x?}", domain);
-        buf[10..10 + domain.len()].copy_from_slice(&domain);
+        //buf[10..10 + domain.len()].copy_from_slice(&domain);
 
-        buf[8] = (domain.len() >> 8) as u8;
-        buf[9] = domain.len() as u8;
+        //buf[8] = (domain.len() >> 8) as u8;
+        //buf[9] = domain.len() as u8;
 
+        buf.extend_from_slice(&[(domain.len() >> 8) as u8, domain.len() as u8]);
+
+        buf.extend_from_slice(&domain);
 
         //let domain = pack_domain(self.domain.as_ref().unwrap().as_str());
         //buf[10..10 + domain.len()].copy_from_slice(&domain);
