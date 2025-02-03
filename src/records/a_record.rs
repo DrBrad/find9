@@ -26,20 +26,8 @@ impl Default for ARecord {
 impl DnsRecord for ARecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = Vec::new();//vec![0u8; self.length];
+        let mut buf = vec![0u8; 10];
 
-        buf.extend_from_slice(&[(self.get_type().get_code() >> 8) as u8, self.get_type().get_code() as u8]);
-
-        buf.extend_from_slice(&[(self.dns_class.unwrap().get_code() >> 8) as u8, self.dns_class.unwrap().get_code() as u8]);
-
-        buf.extend_from_slice(&[
-            (self.ttl >> 24) as u8,
-            (self.ttl >> 16) as u8,
-            (self.ttl >> 8) as u8,
-            self.ttl as u8
-        ]);
-
-        /*
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;
 
@@ -50,7 +38,6 @@ impl DnsRecord for ARecord {
         buf[5] = (self.ttl >> 16) as u8;
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
-        */
 
         let address = match self.address.unwrap() {
             IpAddr::V4(address) => {
@@ -61,14 +48,10 @@ impl DnsRecord for ARecord {
             }
         };
 
-        buf.extend_from_slice(&[(address.len() >> 8) as u8, address.len() as u8]);
-        buf.extend_from_slice(&address);
-        /*
         buf[8] = (address.len() >> 8) as u8;
         buf[9] = address.len() as u8;
 
-        buf[10..10 + address.len()].copy_from_slice(&address);
-        */
+        buf.extend_from_slice(&address);
 
         Ok(buf)
     }

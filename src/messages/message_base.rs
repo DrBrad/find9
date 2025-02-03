@@ -43,8 +43,8 @@ pub struct MessageBase {
     destination: Option<SocketAddr>,
     queries: Vec<DnsQuery>,
     answers: OrderedMap<String, Vec<Box<dyn DnsRecord>>>,
-    name_servers: Vec<Box<dyn DnsRecord>>,
-    additional_records: Vec<Box<dyn DnsRecord>>
+    name_servers: OrderedMap<String, Vec<Box<dyn DnsRecord>>>,
+    additional_records: OrderedMap<String, Vec<Box<dyn DnsRecord>>>
 }
 
 impl Default for MessageBase {
@@ -64,8 +64,8 @@ impl Default for MessageBase {
             destination: None,
             queries: Vec::new(),
             answers: OrderedMap::new(),
-            name_servers: Vec::new(),
-            additional_records: Vec::new()
+            name_servers: OrderedMap::new(),
+            additional_records: OrderedMap::new()
         }
     }
 }
@@ -80,11 +80,10 @@ impl MessageBase {
     }
 
     pub fn encode(&self) -> Vec<u8> {
-        let mut buf = Vec::new();//vec![0u8; self.length];
+        let mut buf = vec![0u8; 12];//self.length];
 
-        buf.extend_from_slice(&[(self.id >> 8) as u8, self.id as u8]);
-        //buf[0] = (self.id >> 8) as u8;
-        //buf[1] = self.id as u8;
+        buf[0] = (self.id >> 8) as u8;
+        buf[1] = self.id as u8;
 
         let z = 0;
         let flags = (if self.qr { 0x8000 } else { 0 })
@@ -96,13 +95,11 @@ impl MessageBase {
                 | ((z & 0x07) << 4)
                 | (self.response_code.get_code() & 0x0F);
 
-        buf.extend_from_slice(&[(flags >> 8) as u8, flags as u8]);
-        //buf[2] = (flags >> 8) as u8;
-        //buf[3] = flags as u8;
+        buf[2] = (flags >> 8) as u8;
+        buf[3] = flags as u8;
 
-        buf.extend_from_slice(&[(self.queries.len() >> 8) as u8, self.queries.len() as u8]);
-        //buf[4] = (self.queries.len() >> 8) as u8;
-        //buf[5] = self.queries.len() as u8;
+        buf[4] = (self.queries.len() >> 8) as u8;
+        buf[5] = self.queries.len() as u8;
 
         /*
         buf[6] = (self.answers.len() >> 8) as u8;
@@ -131,112 +128,52 @@ impl MessageBase {
 
         //NOT IDEAL AS WHAT ABOUT 2 FOR THE SAME QUERY...
 
-        let mut i = 0;
+        //let mut i = 0;
         //println!("{} {}", self.answers.get(&"outlook.office.com".to_string()).unwrap().len(), self.answers.len());
 
+        /*
         for (query, records) in self.answers.iter() {
-            println!("RUNNING");
             for record in records {
                 match record.encode(&mut label_map, offset) {
                     Ok(e) => {
-                        //let pack = pack_domain_with_pointers(query, &label_map);
-                        //buf[offset..offset + pack.len()].copy_from_slice(&pack);
-                        //offset += 4;//pack.len();
                         println!("{}: {}", query, record.to_string());
-                        //buf[offset] = 0xc0;
-                        //buf[offset + 1] = 0x0c;
+
                         let eq = pack_domain_with_pointers(query, &mut label_map, offset);
-                        //buf[offset..offset + eq.len()].copy_from_slice(&eq);
                         buf.extend_from_slice(&eq);
                         offset += eq.len();
 
-                        //buf[offset..offset + e.len()].copy_from_slice(&e);
                         buf.extend_from_slice(&e);
                         offset += e.len();
                     }
                     Err(_) => {}
                 }
-
-
-
-                //break;
-
-                /*
-                match label_map.get(query) {
-                    Some(&pointer) => {
-                        match record.encode() {
-                            Ok(q) => {
-                                buf[offset] = (pointer >> 8) as u8;
-                                buf[offset+1] = pointer as u8;
-
-                                buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
-                                offset += q.len()+2;
-                            }
-                            Err(_) => {}
-                        };
-                    }
-                    None => {}
-                }
-                */
                 i += 1;
             }
-            //break;
         }
+        */
 
-        //i = 9;
+
+        let (answers, i) = Self::encode_records(offset, &self.answers, &mut label_map);
+        buf.extend_from_slice(&answers);
 
         buf[6] = (i >> 8) as u8;
         buf[7] = i as u8;
 
-        i = 0;
 
 
-
-
-
-        i = 1;
-
-        buf[10] = (i >> 8) as u8;
-        buf[11] = i as u8;
-
-        /*
-        let mut i = 0;
-        for (query, record) in &self.answers {
-            match query_map.get(query) {
-                Some(&pointer) => {
-                    match record.encode() {
-                        Ok(q) => {
-                            buf[offset] = (pointer >> 8) as u8;
-                            buf[offset+1] = pointer as u8;
-
-                            buf[offset + 2..offset + 2 + q.len()].copy_from_slice(&q);
-                            offset += q.len()+2;
-                            i += 1;
-                        }
-                        Err(_) => {}
-                    };
-                }
-                None => {}
-            }
-        }
-
-        buf[6] = (i >> 8) as u8;
-        buf[7] = i as u8;
-
-        i = 0;
-
-        //FOR NAME SERVERS
+        let (answers, i) = Self::encode_records(offset, &self.name_servers, &mut label_map);
+        buf.extend_from_slice(&answers);
 
         buf[8] = (i >> 8) as u8;
         buf[9] = i as u8;
 
-        i = 0;
 
-        //FOR ADDITIONAL RECORDS
+
+        let (answers, i) = Self::encode_records(offset, &self.additional_records, &mut label_map);
+        buf.extend_from_slice(&answers);
 
         buf[10] = (i >> 8) as u8;
         buf[11] = i as u8;
-        */
 
         buf
     }
@@ -279,6 +216,7 @@ impl MessageBase {
             queries.push(query);
         }
 
+        /*
         let mut answers: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
 
         for _ in 0..an_count {
@@ -291,56 +229,11 @@ impl MessageBase {
 
             answers.entry(domain).or_insert_with(Vec::new).push(record);
             off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-
-
-
-
-            /*
-            if answers.contains_key(&domain) {
-                answers.get_mut(&domain).unwrap().push(record);
-                continue;
-            }
-
-            let mut records = Vec::new();
-            records.push(record);
-
-            answers.insert(domain, records);
-
-            //off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-            */
-        }
-
-
-        //TEMPORARY
-        let mut name_servers = Vec::new();
-        let mut additional_records = Vec::new();
-
-
-
-
-        /*
-        let mut name_servers = HashMap::new();
-
-        for i in 0..ns_count {
-            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
-            off += 2;
-
-            name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
-            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-            break;
-        }
-
-        let mut additional_records = HashMap::new();
-
-        for i in 0..ar_count {
-            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
-            off += 2;
-
-            name_servers.insert(unpack_domain(buf, pointer), Self::decode_record(buf, off));
-            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-            break;
         }
         */
+        let answers = Self::decode_records(buf, off, an_count);
+        let name_servers = Self::decode_records(buf, off, ns_count);
+        let additional_records = Self::decode_records(buf, off, ar_count);
 
         Self {
             id,
@@ -361,39 +254,81 @@ impl MessageBase {
         }
     }
 
-    fn decode_record(buf: &[u8], off: usize) -> Box<dyn DnsRecord> {
-        match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
-            Types::A => {
-                ARecord::decode(buf, off).dyn_clone()
-            }
-            Types::Aaaa => {
-                AAAARecord::decode(buf, off).dyn_clone()
-            }
-            Types::Ns => {
-                todo!()
-            }
-            Types::Cname => {
-                CNameRecord::decode(buf, off).dyn_clone()
-            }
-            Types::Soa => {
-                todo!()
-            }
-            Types::Ptr => {
-                todo!()
-            }
-            Types::Mx => {
-                todo!()
-            }
-            Types::Txt => {
-                todo!()
-            }
-            Types::Srv => {
-                todo!()
-            }
-            Types::Caa => {
-                todo!()
+    fn encode_records(off: usize, records: &OrderedMap<String, Vec<Box<dyn DnsRecord>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
+        let mut buf = Vec::new();
+        let mut i = 0;
+        let mut off = off;
+
+        for (query, records) in records.iter() {
+            for record in records {
+                match record.encode(label_map, off) {
+                    Ok(e) => {
+                        println!("{}: {}", query, record.to_string());
+
+                        let eq = pack_domain_with_pointers(query, label_map, off);
+                        buf.extend_from_slice(&eq);
+                        off += eq.len();
+
+                        buf.extend_from_slice(&e);
+                        off += e.len();
+                    }
+                    Err(_) => {}
+                }
+                i += 1;
             }
         }
+
+        (buf, i)
+    }
+
+    fn decode_records(buf: &[u8], off: usize, count: u16) -> OrderedMap<String, Vec<Box<dyn DnsRecord>>> {
+        let mut records: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
+        let mut off = off;
+
+        for _ in 0..count {
+            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
+            off += 2;
+
+            let (domain, length) = unpack_domain(buf, pointer);
+            let record = match Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap() {
+                Types::A => {
+                    ARecord::decode(buf, off).dyn_clone()
+                }
+                Types::Aaaa => {
+                    AAAARecord::decode(buf, off).dyn_clone()
+                }
+                Types::Ns => {
+                    todo!()
+                }
+                Types::Cname => {
+                    CNameRecord::decode(buf, off).dyn_clone()
+                }
+                Types::Soa => {
+                    todo!()
+                }
+                Types::Ptr => {
+                    todo!()
+                }
+                Types::Mx => {
+                    todo!()
+                }
+                Types::Txt => {
+                    todo!()
+                }
+                Types::Srv => {
+                    todo!()
+                }
+                Types::Caa => {
+                    todo!()
+                }
+            };
+            println!("{}: {}", domain, record.to_string());
+
+            records.entry(domain).or_insert_with(Vec::new).push(record);
+            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
+        }
+
+        records
     }
 
     pub fn set_id(&mut self, id: u16) {
@@ -502,11 +437,11 @@ impl MessageBase {
         &self.answers
     }*/
 
-    pub fn get_name_servers(&self) -> &Vec<Box<dyn DnsRecord>> {
+    pub fn get_name_servers(&self) -> &OrderedMap<String, Vec<Box<dyn DnsRecord>>> {
         &self.name_servers
     }
 
-    pub fn get_additional_records(&self) -> &Vec<Box<dyn DnsRecord>> {
+    pub fn get_additional_records(&self) -> &OrderedMap<String, Vec<Box<dyn DnsRecord>>> {
         &self.additional_records
     }
 }
