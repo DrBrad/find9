@@ -237,7 +237,8 @@ impl MessageBase {
         let (name_servers, length) = Self::decode_records(buf, off, ns_count);
         off += length;
 
-        let (additional_records, length) = Self::decode_records(buf, off, ar_count);
+        let additional_records = OrderedMap::new();
+        //let (additional_records, length) = Self::decode_records(buf, off, ar_count);
         off += length;
 
         Self {
