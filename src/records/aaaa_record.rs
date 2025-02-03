@@ -9,8 +9,7 @@ use crate::records::inter::dns_record::DnsRecord;
 pub struct AAAARecord {
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    address: Option<IpAddr>,
-    length: usize
+    address: Option<IpAddr>
 }
 
 impl Default for AAAARecord {
@@ -19,8 +18,7 @@ impl Default for AAAARecord {
         Self {
             dns_class: None,
             ttl: 0,
-            address: None,
-            length: 10
+            address: None
         }
     }
 }
@@ -28,8 +26,20 @@ impl Default for AAAARecord {
 impl DnsRecord for AAAARecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; self.length];
+        let mut buf = Vec::new();//vec![0u8; self.length];
 
+        buf.extend_from_slice(&[(self.get_type().get_code() >> 8) as u8, self.get_type().get_code() as u8]);
+
+        buf.extend_from_slice(&[(self.dns_class.unwrap().get_code() >> 8) as u8, self.dns_class.unwrap().get_code() as u8]);
+
+        buf.extend_from_slice(&[
+            (self.ttl >> 24) as u8,
+            (self.ttl >> 16) as u8,
+            (self.ttl >> 8) as u8,
+            self.ttl as u8
+        ]);
+
+        /*
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;
 
@@ -40,6 +50,7 @@ impl DnsRecord for AAAARecord {
         buf[5] = (self.ttl >> 16) as u8;
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
+        */
 
         let address = match self.address.unwrap() {
             IpAddr::V4(address) => {
@@ -50,10 +61,14 @@ impl DnsRecord for AAAARecord {
             }
         };
 
+        buf.extend_from_slice(&[(address.len() >> 8) as u8, address.len() as u8]);
+        buf.extend_from_slice(&address);
+        /*
         buf[8] = (address.len() >> 8) as u8;
         buf[9] = address.len() as u8;
 
         buf[10..10 + address.len()].copy_from_slice(&address);
+        */
 
         Ok(buf)
     }
@@ -79,14 +94,15 @@ impl DnsRecord for AAAARecord {
         Self {
             dns_class,
             ttl,
-            address: Some(address),
-            length: length+10
+            address: Some(address)
         }
     }
 
+    /*
     fn get_length(&self) -> usize {
         self.length
     }
+    */
 
     fn set_dns_class(&mut self, dns_class: DnsClasses) {
         self.dns_class = Some(dns_class);
@@ -151,8 +167,7 @@ impl AAAARecord {
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            address: Some(address),
-            length: length+10
+            address: Some(address)
         }
     }
 
@@ -167,7 +182,6 @@ impl AAAARecord {
         };
 
         self.address = Some(address);
-        self.length = length+10;
     }
 
     pub fn get_address(&self) -> Option<IpAddr> {

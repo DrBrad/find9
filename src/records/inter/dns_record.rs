@@ -9,7 +9,7 @@ pub trait DnsRecord {
 
     fn decode(buf: &[u8], off: usize) -> Self where Self: Sized;
 
-    fn get_length(&self) -> usize;
+    //fn get_length(&self) -> usize;
 
     fn set_dns_class(&mut self, dns_class: DnsClasses);
 

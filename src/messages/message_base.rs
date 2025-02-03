@@ -38,7 +38,7 @@ pub struct MessageBase {
     truncated: bool,
     recursion_desired: bool,
     recursion_available: bool,
-    length: usize,
+    //length: usize,
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
     queries: Vec<DnsQuery>,
@@ -59,7 +59,7 @@ impl Default for MessageBase {
             truncated: false,
             recursion_desired: false,
             recursion_available: false,
-            length: 12,
+            //length: 12,
             origin: None,
             destination: None,
             queries: Vec::new(),
@@ -80,10 +80,11 @@ impl MessageBase {
     }
 
     pub fn encode(&self) -> Vec<u8> {
-        let mut buf = vec![0u8; self.length];
+        let mut buf = Vec::new();//vec![0u8; self.length];
 
-        buf[0] = (self.id >> 8) as u8;
-        buf[1] = self.id as u8;
+        buf.extend_from_slice(&[(self.id >> 8) as u8, self.id as u8]);
+        //buf[0] = (self.id >> 8) as u8;
+        //buf[1] = self.id as u8;
 
         let z = 0;
         let flags = (if self.qr { 0x8000 } else { 0 })
@@ -95,11 +96,13 @@ impl MessageBase {
                 | ((z & 0x07) << 4)
                 | (self.response_code.get_code() & 0x0F);
 
-        buf[2] = (flags >> 8) as u8;
-        buf[3] = flags as u8;
+        buf.extend_from_slice(&[(flags >> 8) as u8, flags as u8]);
+        //buf[2] = (flags >> 8) as u8;
+        //buf[3] = flags as u8;
 
-        buf[4] = (self.queries.len() >> 8) as u8;
-        buf[5] = self.queries.len() as u8;
+        buf.extend_from_slice(&[(self.queries.len() >> 8) as u8, self.queries.len() as u8]);
+        //buf[4] = (self.queries.len() >> 8) as u8;
+        //buf[5] = self.queries.len() as u8;
 
         /*
         buf[6] = (self.answers.len() >> 8) as u8;
@@ -118,7 +121,8 @@ impl MessageBase {
         for query in &self.queries {
             let q = query.encode(&mut label_map, offset);
 
-            buf[offset..offset + q.len()].copy_from_slice(&q);
+            buf.extend_from_slice(&q);
+            //buf[offset..offset + q.len()].copy_from_slice(&q);
 
             let len = q.len();
            // label_map.insert(query.get_query().unwrap(), offset);
@@ -142,10 +146,12 @@ impl MessageBase {
                         //buf[offset] = 0xc0;
                         //buf[offset + 1] = 0x0c;
                         let eq = pack_domain_with_pointers(query, &mut label_map, offset);
-                        buf[offset..offset + eq.len()].copy_from_slice(&eq);
+                        //buf[offset..offset + eq.len()].copy_from_slice(&eq);
+                        buf.extend_from_slice(&eq);
                         offset += eq.len();
 
-                        buf[offset..offset + e.len()].copy_from_slice(&e);
+                        //buf[offset..offset + e.len()].copy_from_slice(&e);
+                        buf.extend_from_slice(&e);
                         offset += e.len();
                     }
                     Err(_) => {}
@@ -345,7 +351,7 @@ impl MessageBase {
             truncated,
             recursion_desired,
             recursion_available,
-            length: off,
+            //length: off,
             origin: None,
             destination: None,
             queries,
@@ -475,7 +481,6 @@ impl MessageBase {
     }
 
     pub fn add_query(&mut self, query: DnsQuery) {
-        self.length += query.get_length();
         self.queries.push(query);
     }
 
@@ -484,8 +489,6 @@ impl MessageBase {
     }
 
     pub fn add_answers(&mut self, query: &str, record: Box<dyn DnsRecord>) {
-        self.length += record.get_length()+2;
-
         if self.answers.contains_key(&query.to_string()) {
             self.answers.get_mut(&query.to_string()).unwrap().push(record);
             return;

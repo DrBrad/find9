@@ -9,8 +9,7 @@ use crate::utils::domain_utils::{pack_domain, pack_domain_with_pointers, unpack_
 pub struct CNameRecord {
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    domain: Option<String>,
-    length: usize
+    domain: Option<String>
 }
 
 impl Default for CNameRecord {
@@ -19,8 +18,7 @@ impl Default for CNameRecord {
         Self {
             dns_class: None,
             ttl: 0,
-            domain: None,
-            length: 8
+            domain: None
         }
     }
 }
@@ -91,14 +89,15 @@ impl DnsRecord for CNameRecord {
         Self {
             dns_class,
             ttl,
-            domain: Some(domain),
-            length: length+10
+            domain: Some(domain)
         }
     }
 
+    /*
     fn get_length(&self) -> usize {
         self.length
     }
+    */
 
     fn set_dns_class(&mut self, dns_class: DnsClasses) {
         self.dns_class = Some(dns_class);
@@ -154,14 +153,12 @@ impl CNameRecord {
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            domain: Some(domain.to_string()),
-            length: domain.len()+10
+            domain: Some(domain.to_string())
         }
     }
 
     pub fn set_domain(&mut self, domain: &str) {
         self.domain = Some(domain.to_string());
-        self.length = domain.len()+10;
     }
 
     pub fn get_domain(&self) -> Option<String> {
