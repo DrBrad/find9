@@ -57,16 +57,15 @@ impl DnsRecord for ARecord {
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        let _type = Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap();
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap());
+        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
-        let ttl = ((buf[off+4] as u32) << 24) |
-                ((buf[off+5] as u32) << 16) |
-                ((buf[off+6] as u32) << 8) |
-                (buf[off+7] as u32);
+        let ttl = ((buf[off+2] as u32) << 24) |
+                ((buf[off+3] as u32) << 16) |
+                ((buf[off+4] as u32) << 8) |
+                (buf[off+5] as u32);
 
-        let length = ((buf[off+8] as usize) << 8) | (buf[off+9] as usize);
-        let record = &buf[off + 10..off + 10 + length];
+        let length = ((buf[off+6] as usize) << 8) | (buf[off+7] as usize);
+        let record = &buf[off + 8..off + 8 + length];
 
         let address = match record.len() {
             4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
@@ -79,31 +78,6 @@ impl DnsRecord for ARecord {
             ttl,
             address: Some(address)
         }
-    }
-
-    /*
-    fn get_length(&self) -> usize {
-        self.length
-    }
-    */
-
-    fn set_dns_class(&mut self, dns_class: DnsClasses) {
-        self.dns_class = Some(dns_class);
-    }
-
-    fn get_dns_class(&self) -> Result<DnsClasses, String> {
-        match self.dns_class {
-            Some(ref dns_class) => Ok(dns_class.clone()),
-            None => Err("No dns class returned".to_string())
-        }
-    }
-
-    fn set_ttl(&mut self, ttl: u32) {
-        self.ttl = ttl;
-    }
-
-    fn get_ttl(&self) -> u32 {
-        self.ttl
     }
 
     fn get_type(&self) -> Types {
@@ -131,7 +105,7 @@ impl DnsRecord for ARecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, addr: {}", Types::A, self.dns_class.unwrap(), self.address.unwrap().to_string())
+        format!("[RECORD] type {:?}, class {:?}, addr: {}", self.get_type(), self.dns_class.unwrap(), self.address.unwrap().to_string())
     }
 }
 
@@ -152,6 +126,25 @@ impl ARecord {
             ttl,
             address: Some(address)
         }
+    }
+
+    pub fn set_dns_class(&mut self, dns_class: DnsClasses) {
+        self.dns_class = Some(dns_class);
+    }
+
+    pub fn get_dns_class(&self) -> Result<DnsClasses, String> {
+        match self.dns_class {
+            Some(ref dns_class) => Ok(dns_class.clone()),
+            None => Err("No dns class returned".to_string())
+        }
+    }
+
+    pub fn set_ttl(&mut self, ttl: u32) {
+        self.ttl = ttl;
+    }
+
+    pub fn get_ttl(&self) -> u32 {
+        self.ttl
     }
 
     pub fn set_address(&mut self, address: IpAddr) {

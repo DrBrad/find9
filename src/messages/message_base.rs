@@ -7,6 +7,7 @@ use crate::records::a_record::ARecord;
 use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
+use crate::records::opt_record::OptRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
 use crate::utils::ordered_map::OrderedMap;
@@ -100,17 +101,6 @@ impl MessageBase {
         buf[4] = (self.queries.len() >> 8) as u8;
         buf[5] = self.queries.len() as u8;
 
-        /*
-        buf[6] = (self.answers.len() >> 8) as u8;
-        buf[7] = self.answers.len() as u8;
-
-        buf[8] = (self.name_servers.len() >> 8) as u8;
-        buf[9] = self.name_servers.len() as u8;
-
-        buf[10] = (self.additional_records.len() >> 8) as u8;
-        buf[11] = self.additional_records.len() as u8;
-        */
-
         let mut label_map = HashMap::new();
         let mut offset = 12;
 
@@ -124,33 +114,6 @@ impl MessageBase {
            // label_map.insert(query.get_query().unwrap(), offset);
             offset += len;
         }
-
-        //NOT IDEAL AS WHAT ABOUT 2 FOR THE SAME QUERY...
-
-        //let mut i = 0;
-        //println!("{} {}", self.answers.get(&"outlook.office.com".to_string()).unwrap().len(), self.answers.len());
-
-        /*
-        for (query, records) in self.answers.iter() {
-            for record in records {
-                match record.encode(&mut label_map, offset) {
-                    Ok(e) => {
-                        println!("{}: {}", query, record.to_string());
-
-                        let eq = pack_domain_with_pointers(query, &mut label_map, offset);
-                        buf.extend_from_slice(&eq);
-                        offset += eq.len();
-
-                        buf.extend_from_slice(&e);
-                        offset += e.len();
-                    }
-                    Err(_) => {}
-                }
-                i += 1;
-            }
-        }
-        */
-
 
         let (answers, i) = Self::encode_records(offset, &self.answers, &mut label_map);
         buf.extend_from_slice(&answers);
@@ -215,28 +178,12 @@ impl MessageBase {
             queries.push(query);
         }
 
-        /*
-        let mut answers: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
-
-        for _ in 0..an_count {
-            let pointer = ((buf[off] as usize & 0x3f) << 8 | buf[off+1] as usize & 0xff) & 0x3fff;
-            off += 2;
-
-            let (domain, length) = unpack_domain(buf, pointer);
-            let record = Self::decode_record(buf, off);
-            println!("{}: {}", domain, record.to_string());
-
-            answers.entry(domain).or_insert_with(Vec::new).push(record);
-            off += ((buf[off+8] as usize & 0xff) << 8) | (buf[off+9] as usize & 0xff)+10;
-        }
-        */
         let (answers, length) = Self::decode_records(buf, off, an_count);
         off += length;
 
         let (name_servers, length) = Self::decode_records(buf, off, ns_count);
         off += length;
 
-        //let additional_records = OrderedMap::new();
         let (additional_records, length) = Self::decode_records(buf, off, ar_count);
         off += length;
 
@@ -269,10 +216,16 @@ impl MessageBase {
                 match record.encode(label_map, off) {
                     Ok(e) => {
                         println!("{}: {}", query, record.to_string());
-
-                        let eq = pack_domain_with_pointers(query, label_map, off);
-                        buf.extend_from_slice(&eq);
-                        off += eq.len();
+                        match query.len() {
+                            0 => {
+                                buf.push(0);
+                            }
+                            _ => {
+                                let eq = pack_domain_with_pointers(query, label_map, off);
+                                buf.extend_from_slice(&eq);
+                                off += eq.len();
+                            }
+                        }
 
                         buf.extend_from_slice(&e);
                         off += e.len();
@@ -306,16 +259,16 @@ impl MessageBase {
 
             let record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
                 Types::A => {
-                    ARecord::decode(buf, pos).dyn_clone()
+                    ARecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Aaaa => {
-                    AAAARecord::decode(buf, pos).dyn_clone()
+                    AAAARecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Ns => {
                     todo!()
                 }
                 Types::Cname => {
-                    CNameRecord::decode(buf, pos).dyn_clone()
+                    CNameRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Soa => {
                     todo!()
@@ -332,8 +285,8 @@ impl MessageBase {
                 Types::Srv => {
                     todo!()
                 }
-                Types::Otp => {
-                    todo!()
+                Types::Opt => {
+                    OptRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Caa => {
                     todo!()
