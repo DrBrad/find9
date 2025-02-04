@@ -8,6 +8,7 @@ use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::records::opt_record::OptRecord;
+use crate::records::soa_record::SoaRecord;
 use crate::records::txt_record::TxtRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
@@ -272,7 +273,7 @@ impl MessageBase {
                     CNameRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Soa => {
-                    todo!()
+                    SoaRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Ptr => {
                     todo!()
