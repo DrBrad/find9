@@ -93,7 +93,7 @@ impl DnsRecord for SoaRecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, cname: {}", self.get_type(), self.dns_class.unwrap(), self.domain.as_ref().unwrap())
+        format!("[RECORD] type {:?}, class {:?}, domain: {}", self.get_type(), self.dns_class.unwrap(), self.domain.as_ref().unwrap())
     }
 }
 
