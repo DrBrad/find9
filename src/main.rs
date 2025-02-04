@@ -63,7 +63,7 @@ fn main() {
     let mut buf = [0u8; 512];
     match socket.recv_from(&mut buf) {
         Ok((size, src_addr)) => {
-            println!("{:?}", buf);
+            println!("{:?}", &buf[0..size]);
 
             let message = MessageBase::decode(&buf, 0);
             println!("{:?}", &message.encode());
