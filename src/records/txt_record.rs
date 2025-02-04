@@ -3,13 +3,12 @@ use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
-use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
 
 #[derive(Clone)]
 pub struct TxtRecord {
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    content: Option<String>
+    record: Option<String>
 }
 
 impl Default for TxtRecord {
@@ -18,7 +17,7 @@ impl Default for TxtRecord {
         Self {
             dns_class: None,
             ttl: 0,
-            content: None
+            record: None
         }
     }
 }
@@ -39,7 +38,7 @@ impl DnsRecord for TxtRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let encoded = self.content.as_ref().unwrap().as_bytes();
+        let encoded = self.record.as_ref().unwrap().as_bytes();
 
         buf[8] = (encoded.len() >> 8) as u8;
         buf[9] = encoded.len() as u8;
@@ -63,7 +62,7 @@ impl DnsRecord for TxtRecord {
         Self {
             dns_class,
             ttl,
-            content: Some(content)
+            record: Some(content)
         }
     }
 
@@ -92,7 +91,7 @@ impl DnsRecord for TxtRecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, content: {}", self.get_type(), self.dns_class.unwrap(), self.content.as_ref().unwrap())
+        format!("[RECORD] type {:?}, class {:?}, record {}", self.get_type(), self.dns_class.unwrap(), self.record.as_ref().unwrap())
     }
 }
 
@@ -102,7 +101,7 @@ impl TxtRecord {
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            content: Some(content.to_string())
+            record: Some(content.to_string())
         }
     }
 
@@ -125,11 +124,11 @@ impl TxtRecord {
         self.ttl
     }
 
-    pub fn set_content(&mut self, content: &str) {
-        self.content = Some(content.to_string());
+    pub fn set_record(&mut self, record: &str) {
+        self.record = Some(record.to_string());
     }
 
-    pub fn get_content(&self) -> Option<String> {
-        self.content.clone()
+    pub fn get_record(&self) -> Option<String> {
+        self.record.clone()
     }
 }

@@ -13,6 +13,9 @@ mod utils;
 //GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
 
 fn main() {
+
+
+
     /*
     let hex_data: Vec<u8> = vec![
         0xaf, 0xcc, 0x81, 0x80, 0x00, 0x01, 0x00, 0x09, 0x00, 0x00, 0x00, 0x01, 0x07, 0x6f, 0x75, 0x74,
@@ -37,7 +40,8 @@ fn main() {
     println!("{:x?}", hex_data);
     println!("");
     println!("{:x?}", message.encode());
-    */
+
+    return;*/
 
 
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
@@ -45,7 +49,8 @@ fn main() {
     let mut message = MessageBase::new(20);
     //message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
-    message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
+    message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
+    //message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
     message.set_recursion_desired(true);
 
     //message.add_query(DnsQuery::new("github.com", Types::Aaaa, DnsClasses::In));
@@ -59,7 +64,7 @@ fn main() {
     let mut buf = [0u8; 512];
     match socket.recv_from(&mut buf) {
         Ok((size, src_addr)) => {
-            //println!("{:?}", buf);
+            println!("{:?}", buf);
 
             let message = MessageBase::decode(&buf, 0);
             println!("{:?}", &message.encode());
@@ -69,24 +74,12 @@ fn main() {
 
 
 
-    /*
-    let mut message = MessageBase::new(20);
-    message.add_query(DnsQuery::new("distributed.net", Types::A, DnsClasses::In));
-    message.add_answers("distributed.net", ARecord::new(DnsClasses::In, 32, IpAddr::from([127, 0, 0, 1])).dyn_clone());
 
-    let encoded = message.encode();
-    println!("{:?}", encoded);
 
-    let mut message = MessageBase::decode(&encoded, 0);
-    println!("{:?}", message.encode());
-    */
 
-    /*
-    let query = DnsQuery::new("distributed.net", Types::A, DnsClasses::In);
-    let encoded = query.encode();
-    println!("{:?}", encoded);
 
-    let mut query = DnsQuery::decode(encoded.as_slice(), 0);
-    println!("{} {:?} {:?}", query.get_query().unwrap(), query.get_type().get_code(), query.get_dns_class().get_code());
-    */
+
+
+
+
 }

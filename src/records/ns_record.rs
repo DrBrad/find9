@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
-use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
+use crate::utils::domain_utils::{pack_domain, unpack_domain};
 
 #[derive(Clone)]
 pub struct NsRecord {
@@ -39,7 +39,7 @@ impl DnsRecord for NsRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let domain = pack_domain_with_pointers(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
+        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
 
         buf[8] = (domain.len() >> 8) as u8;
         buf[9] = domain.len() as u8;
@@ -93,7 +93,7 @@ impl DnsRecord for NsRecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, domain: {}", self.get_type(), self.dns_class.unwrap(), self.domain.as_ref().unwrap())
+        format!("[RECORD] type {:?}, class {:?}, domain {}", self.get_type(), self.dns_class.unwrap(), self.domain.as_ref().unwrap())
     }
 }
 

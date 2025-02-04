@@ -7,13 +7,14 @@ use crate::records::a_record::ARecord;
 use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
+use crate::records::mx_record::MxRecord;
 use crate::records::ns_record::NsRecord;
 use crate::records::opt_record::OptRecord;
 use crate::records::ptr_record::PtrRecord;
 use crate::records::soa_record::SoaRecord;
 use crate::records::txt_record::TxtRecord;
 use crate::utils::dns_query::DnsQuery;
-use crate::utils::domain_utils::{pack_domain_with_pointers, unpack_domain};
+use crate::utils::domain_utils::{pack_domain, unpack_domain};
 use crate::utils::ordered_map::OrderedMap;
 /*
                                1  1  1  1  1  1
@@ -225,7 +226,7 @@ impl MessageBase {
                                 buf.push(0);
                             }
                             _ => {
-                                let eq = pack_domain_with_pointers(query, label_map, off);
+                                let eq = pack_domain(query, label_map, off);
                                 buf.extend_from_slice(&eq);
                                 off += eq.len();
                             }
@@ -281,7 +282,7 @@ impl MessageBase {
                     PtrRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Mx => {
-                    todo!()
+                    MxRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Txt => {
                     TxtRecord::decode(buf, pos+2).dyn_clone()
