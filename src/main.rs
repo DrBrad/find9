@@ -5,6 +5,7 @@ use crate::messages::message_base::MessageBase;
 use crate::records::a_record::ARecord;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::dns_query::DnsQuery;
+use crate::utils::random;
 
 mod messages;
 mod records;
@@ -44,7 +45,7 @@ fn main() {
 
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
-    let mut message = MessageBase::new(20);
+    let mut message = MessageBase::new(random::gen());
     //message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
     message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
