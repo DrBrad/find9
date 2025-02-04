@@ -13,9 +13,6 @@ mod utils;
 //GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
 
 fn main() {
-
-
-
     /*
     let hex_data: Vec<u8> = vec![
         0xaf, 0xcc, 0x81, 0x80, 0x00, 0x01, 0x00, 0x09, 0x00, 0x00, 0x00, 0x01, 0x07, 0x6f, 0x75, 0x74,
@@ -41,15 +38,16 @@ fn main() {
     println!("");
     println!("{:x?}", message.encode());
 
-    return;*/
+    return;
+    */
 
 
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
     let mut message = MessageBase::new(20);
     //message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
-    //message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
-    message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
+    message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
+    //message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
     //message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
     message.set_recursion_desired(true);
 

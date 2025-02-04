@@ -293,6 +293,18 @@ impl MessageBase {
                 Types::Opt => {
                     OptRecord::decode(buf, pos+2).dyn_clone()
                 }
+                Types::Rrsig => {
+                    todo!()
+                }
+                Types::Nsec => {
+                    todo!()
+                }
+                Types::Spf => {
+                    todo!()
+                }
+                Types::Tsig => {
+                    todo!()
+                }
                 Types::Caa => {
                     todo!()
                 }
