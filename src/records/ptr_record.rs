@@ -69,7 +69,7 @@ impl DnsRecord for PtrRecord {
     }
 
     fn get_type(&self) -> Types {
-        Types::Soa
+        Types::Ptr
     }
 
     fn as_any(&self) -> &dyn Any {

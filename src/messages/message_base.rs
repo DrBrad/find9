@@ -7,6 +7,7 @@ use crate::records::a_record::ARecord;
 use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::inter::dns_record::DnsRecord;
+use crate::records::ns_record::NsRecord;
 use crate::records::opt_record::OptRecord;
 use crate::records::ptr_record::PtrRecord;
 use crate::records::soa_record::SoaRecord;
@@ -268,7 +269,7 @@ impl MessageBase {
                     AAAARecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Ns => {
-                    todo!()
+                    NsRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Cname => {
                     CNameRecord::decode(buf, pos+2).dyn_clone()
