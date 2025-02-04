@@ -57,12 +57,12 @@ impl DnsRecord for TxtRecord {
             (buf[off+5] as u32);
 
         let length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-        let content = String::from_utf8(buf[8..8 + length as usize].to_vec()).unwrap();
+        let record = String::from_utf8(buf[8..8 + length as usize].to_vec()).unwrap();
 
         Self {
             dns_class,
             ttl,
-            record: Some(content)
+            record: Some(record)
         }
     }
 
