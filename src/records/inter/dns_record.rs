@@ -1,15 +1,13 @@
 use std::any::Any;
 use std::collections::HashMap;
-use crate::messages::inter::dns_classes::DnsClasses;
-use crate::messages::inter::types::Types;
 
 pub trait DnsRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String>;
 
-    fn decode(buf: &[u8], off: usize) -> Self where Self: Sized;
+    fn decode(&mut self, buf: &[u8], off: usize);
 
-    fn get_type(&self) -> Types;
+    fn get_type(&self) -> u16;
 
     fn as_any(&self) -> &dyn Any;
 

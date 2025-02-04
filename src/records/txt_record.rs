@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
-use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
 
 #[derive(Clone)]
@@ -27,8 +26,8 @@ impl DnsRecord for TxtRecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
+        buf[0] = (self.get_type() >> 8) as u8;
+        buf[1] = self.get_type() as u8;
 
         buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
         buf[3] = self.dns_class.unwrap().get_code() as u8;
@@ -48,26 +47,20 @@ impl DnsRecord for TxtRecord {
         Ok(buf)
     }
 
-    fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+    fn decode(&mut self, buf: &[u8], off: usize) {
+        self.dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
-        let ttl = ((buf[off+2] as u32) << 24) |
+        self.ttl = ((buf[off+2] as u32) << 24) |
             ((buf[off+3] as u32) << 16) |
             ((buf[off+4] as u32) << 8) |
             (buf[off+5] as u32);
 
         let length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-        let content = String::from_utf8(buf[8..8 + length as usize].to_vec()).unwrap();
-
-        Self {
-            dns_class,
-            ttl,
-            record: Some(content)
-        }
+        self.record = Some(String::from_utf8(buf[8..8 + length as usize].to_vec()).unwrap());
     }
 
-    fn get_type(&self) -> Types {
-        Types::Txt
+    fn get_type(&self) -> u16 {
+        16
     }
 
     fn as_any(&self) -> &dyn Any {

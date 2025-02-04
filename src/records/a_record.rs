@@ -2,7 +2,6 @@ use std::any::Any;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
-use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
 
 #[derive(Clone)]
@@ -28,8 +27,8 @@ impl DnsRecord for ARecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
+        buf[0] = (self.get_type() >> 8) as u8;
+        buf[1] = self.get_type() as u8;
 
         buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
         buf[3] = self.dns_class.unwrap().get_code() as u8;
@@ -56,10 +55,10 @@ impl DnsRecord for ARecord {
         Ok(buf)
     }
 
-    fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+    fn decode(&mut self, buf: &[u8], off: usize) {
+        self.dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
-        let ttl = ((buf[off+2] as u32) << 24) |
+        self.ttl = ((buf[off+2] as u32) << 24) |
                 ((buf[off+3] as u32) << 16) |
                 ((buf[off+4] as u32) << 8) |
                 (buf[off+5] as u32);
@@ -67,21 +66,15 @@ impl DnsRecord for ARecord {
         let length = ((buf[off+6] as usize) << 8) | (buf[off+7] as usize);
         let record = &buf[off + 8..off + 8 + length];
 
-        let address = match record.len() {
+        self.address = Some(match record.len() {
             4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
             16 => IpAddr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
             _ => panic!("Invalid Inet Address")
-        };
-
-        Self {
-            dns_class,
-            ttl,
-            address: Some(address)
-        }
+        });
     }
 
-    fn get_type(&self) -> Types {
-        Types::A
+    fn get_type(&self) -> u16 {
+        1
     }
 
     fn as_any(&self) -> &dyn Any {

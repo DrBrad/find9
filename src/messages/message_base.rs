@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use crate::messages::inter::op_codes::OpCodes;
 use crate::messages::inter::response_codes::ResponseCodes;
-use crate::messages::inter::types::Types;
 use crate::records::a_record::ARecord;
 use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
@@ -11,6 +10,7 @@ use crate::records::mx_record::MxRecord;
 use crate::records::ns_record::NsRecord;
 use crate::records::opt_record::OptRecord;
 use crate::records::ptr_record::PtrRecord;
+use crate::records::inter::record_handler::RecordHandler;
 use crate::records::soa_record::SoaRecord;
 use crate::records::txt_record::TxtRecord;
 use crate::utils::dns_query::DnsQuery;
@@ -145,7 +145,7 @@ impl MessageBase {
         buf
     }
 
-    pub fn decode(buf: &[u8], off: usize) -> Self {
+    pub fn decode(record_handler: &RecordHandler, buf: &[u8], off: usize) -> Self {
         let id = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
         let qr = ((buf[off+2] >> 7) & 0x1) == 1;
         let op_code = OpCodes::get_op_from_code(((buf[off+2] >> 3) & 0xf) as u16).unwrap();
@@ -183,13 +183,13 @@ impl MessageBase {
             queries.push(query);
         }
 
-        let (answers, length) = Self::decode_records(buf, off, an_count);
+        let (answers, length) = Self::decode_records(record_handler, buf, off, an_count);
         off += length;
 
-        let (name_servers, length) = Self::decode_records(buf, off, ns_count);
+        let (name_servers, length) = Self::decode_records(record_handler, buf, off, ns_count);
         off += length;
 
-        let (additional_records, length) = Self::decode_records(buf, off, ar_count);
+        let (additional_records, length) = Self::decode_records(record_handler, buf, off, ar_count);
         off += length;
 
         Self {
@@ -244,7 +244,7 @@ impl MessageBase {
         (buf, i)
     }
 
-    fn decode_records(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn DnsRecord>>>, usize) {
+    fn decode_records(record_handler: &RecordHandler, buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn DnsRecord>>>, usize) {
         let mut records: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
         let mut pos = off;
 
@@ -262,36 +262,37 @@ impl MessageBase {
                 }
             }
 
-            let record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
+            /*
+            let mut record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
                 Types::A => {
-                    ARecord::decode(buf, pos+2).dyn_clone()
+                    ARecord::default().dyn_clone()
                 }
                 Types::Aaaa => {
-                    AAAARecord::decode(buf, pos+2).dyn_clone()
+                    AAAARecord::default().dyn_clone()
                 }
                 Types::Ns => {
-                    NsRecord::decode(buf, pos+2).dyn_clone()
+                    NsRecord::default().dyn_clone()
                 }
                 Types::Cname => {
-                    CNameRecord::decode(buf, pos+2).dyn_clone()
+                    CNameRecord::default().dyn_clone()
                 }
                 Types::Soa => {
-                    SoaRecord::decode(buf, pos+2).dyn_clone()
+                    SoaRecord::default().dyn_clone()
                 }
                 Types::Ptr => {
-                    PtrRecord::decode(buf, pos+2).dyn_clone()
+                    PtrRecord::default().dyn_clone()
                 }
                 Types::Mx => {
-                    MxRecord::decode(buf, pos+2).dyn_clone()
+                    MxRecord::default().dyn_clone()
                 }
                 Types::Txt => {
-                    TxtRecord::decode(buf, pos+2).dyn_clone()
+                    TxtRecord::default().dyn_clone()
                 }
                 Types::Srv => {
                     todo!()
                 }
                 Types::Opt => {
-                    OptRecord::decode(buf, pos+2).dyn_clone()
+                    OptRecord::default().dyn_clone()
                 }
                 Types::Rrsig => {
                     todo!()
@@ -309,6 +310,9 @@ impl MessageBase {
                     todo!()
                 }
             };
+            */
+            let mut record = record_handler.find_record(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap()();
+            record.decode(buf, pos+2);
             println!("{}: {}", domain, record.to_string());
 
             records.entry(domain).or_insert_with(Vec::new).push(record);

@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
-use crate::messages::inter::types::Types;
 use crate::records::inter::dns_record::DnsRecord;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
 
@@ -28,8 +27,8 @@ impl DnsRecord for SoaRecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
+        buf[0] = (self.get_type() >> 8) as u8;
+        buf[1] = self.get_type() as u8;
 
         buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
         buf[3] = self.dns_class.unwrap().get_code() as u8;
@@ -49,10 +48,10 @@ impl DnsRecord for SoaRecord {
         Ok(buf)
     }
 
-    fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+    fn decode(&mut self, buf: &[u8], off: usize) {
+        self.dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
-        let ttl = ((buf[off+2] as u32) << 24) |
+        self.ttl = ((buf[off+2] as u32) << 24) |
             ((buf[off+3] as u32) << 16) |
             ((buf[off+4] as u32) << 8) |
             (buf[off+5] as u32);
@@ -60,16 +59,11 @@ impl DnsRecord for SoaRecord {
         let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
 
         let (domain, length) = unpack_domain(buf, off+8);
-
-        Self {
-            dns_class,
-            ttl,
-            domain: Some(domain)
-        }
+        self.domain = Some(domain);
     }
 
-    fn get_type(&self) -> Types {
-        Types::Soa
+    fn get_type(&self) -> u16 {
+        6
     }
 
     fn as_any(&self) -> &dyn Any {

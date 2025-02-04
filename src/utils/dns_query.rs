@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
-use crate::messages::inter::types::Types;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
 
 #[derive(Clone)]
 pub struct DnsQuery {
     query: Option<String>,
-    _type: Types,
+    _type: u16,
     dns_class: DnsClasses,
     length: usize
 }
@@ -16,7 +15,7 @@ impl Default for DnsQuery {
     fn default() -> Self {
         Self {
             query: None,
-            _type: Types::A,
+            _type: 0,
             dns_class: DnsClasses::In,
             length: 4
         }
@@ -25,7 +24,7 @@ impl Default for DnsQuery {
 
 impl DnsQuery {
 
-    pub fn new(query: &str, _type: Types, dns_class: DnsClasses) -> Self {
+    pub fn new(query: &str, _type: u16, dns_class: DnsClasses) -> Self {
         Self {
             query: Some(query.to_string()),
             _type,
@@ -42,8 +41,8 @@ impl DnsQuery {
         buf[offset..offset + address.len()].copy_from_slice(&address);
         offset += address.len();
 
-        buf[offset] = (self._type.get_code() >> 8) as u8;
-        buf[offset+1] = self._type.get_code() as u8;
+        buf[offset] = (self._type >> 8) as u8;
+        buf[offset+1] = self._type as u8;
 
         buf[offset+2] = (self.dns_class.get_code() >> 8) as u8;
         buf[offset+3] = self.dns_class.get_code() as u8;
@@ -57,7 +56,7 @@ impl DnsQuery {
 
         Self {
             query: Some(query),
-            _type: Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap(),
+            _type: ((buf[off] as u16) << 8) | (buf[off+1] as u16),
             dns_class: DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap(),
             length: length+4
         }
@@ -74,11 +73,11 @@ impl DnsQuery {
         }
     }
 
-    pub fn set_type(&mut self, _type: Types) {
+    pub fn set_type(&mut self, _type: u16) {
         self._type = _type;
     }
 
-    pub fn get_type(&self) -> Types {
+    pub fn get_type(&self) -> u16 {
         self._type
     }
 
