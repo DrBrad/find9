@@ -299,6 +299,9 @@ impl MessageBase {
                 Types::Nsec => {
                     todo!()
                 }
+                Types::DnsKey => {
+                    todo!()
+                }
                 Types::Spf => {
                     todo!()
                 }
@@ -306,6 +309,9 @@ impl MessageBase {
                     todo!()
                 }
                 Types::Caa => {
+                    todo!()
+                }
+                Types::Cookie => {
                     todo!()
                 }
             };
