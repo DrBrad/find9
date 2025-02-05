@@ -316,6 +316,9 @@ impl MessageBase {
                 Types::DnsKey => {
                     todo!()
                 }
+                Types::Https => {
+                    todo!()
+                }
                 Types::Spf => {
                     todo!()
                 }
@@ -323,6 +326,9 @@ impl MessageBase {
                     todo!()
                 }
                 Types::Caa => {
+                    todo!()
+                }
+                _ => {
                     todo!()
                 }
             };

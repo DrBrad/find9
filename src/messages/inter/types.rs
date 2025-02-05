@@ -13,15 +13,17 @@ pub enum Types {
     Rrsig,
     Nsec,
     DnsKey,
+    Https,
     Spf,
     Tsig,
+    Any,
     Caa
 }
 
 impl Types {
 
     pub fn get_type_from_code(code: u16) -> Result<Self, String> {
-        for c in [Self::A, Self::Aaaa, Self::Ns, Self::Cname, Self::Soa, Self::Ptr, Self::Mx, Self::Txt, Self::Opt, Self::Rrsig, Self::Nsec, Self::DnsKey, Self::Srv, Self::Spf, Self::Tsig, Self::Caa] {
+        for c in [Self::A, Self::Aaaa, Self::Ns, Self::Cname, Self::Soa, Self::Ptr, Self::Mx, Self::Txt, Self::Opt, Self::Rrsig, Self::Nsec, Self::DnsKey, Self::Https, Self::Srv, Self::Spf, Self::Tsig, Self::Any, Self::Caa] {
             if c.get_code() == code {
                 return Ok(c);
             }
@@ -45,8 +47,10 @@ impl Types {
             Self::Rrsig => 46,
             Self::Nsec => 47,
             Self::DnsKey => 48,
+            Self::Https => 65,
             Self::Spf => 99,
             Self::Tsig => 250,
+            Self::Any => 255,
             Self::Caa => 257
         }
     }
