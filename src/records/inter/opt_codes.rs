@@ -1,5 +1,5 @@
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum OptCodes {
     Llq,
     Ul,
@@ -24,7 +24,7 @@ pub enum OptCodes {
 
 impl OptCodes {
 
-    pub fn get_op_from_code(code: u16) -> Result<Self, String> {
+    pub fn get_opt_from_code(code: u16) -> Result<Self, String> {
         for c in [Self::Llq] {
             if c.get_code() == code {
                 return Ok(c);

@@ -1,5 +1,4 @@
 pub mod inter;
-pub mod opt;
 pub mod a_record;
 pub mod aaaa_record;
 pub mod cname_record;

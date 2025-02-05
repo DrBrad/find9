@@ -44,7 +44,11 @@ impl DnsRecord for OptRecord {
         buf[6] = (self.flags >> 8) as u8;
         buf[7] = self.flags as u8;
 
-        //buf.extend_from_slice(&self.options);
+        for (code, option) in self.options.iter() {
+            buf.extend_from_slice(&[(code.get_code() >> 8) as u8, code.get_code() as u8]);
+            buf.extend_from_slice(&[(option.len() >> 8) as u8, option.len() as u8]);
+            buf.extend_from_slice(&option);
+        }
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
@@ -58,13 +62,17 @@ impl DnsRecord for OptRecord {
         let edns_version = buf[off+3];
         let flags = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
 
-        let length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-        //let options = buf[8..8 + length as usize].to_vec();
+        let record_length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
 
-        let options = OrderedMap::new();
+        let mut off = off+8;
+        let mut options = OrderedMap::new();
 
+        while off < off+record_length as usize {
+            let opt_code = OptCodes::get_opt_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap();
 
-
+            let length = ((buf[off+2] as u16) << 8) | (buf[off+3] as u16);
+            options.insert(opt_code, buf[off + 4..off + 4 + length as usize].to_vec());
+        }
 
         Self {
             payload_size,
@@ -106,13 +114,13 @@ impl DnsRecord for OptRecord {
 
 impl OptRecord {
 
-    pub fn new(payload_size: u16, ext_rcode: u8, edns_version: u8, flags: u16, options: Vec<u8>) -> Self {
+    pub fn new(payload_size: u16, ext_rcode: u8, edns_version: u8, flags: u16) -> Self {
         Self {
             payload_size,
             ext_rcode,
             edns_version,
             flags,
-            options
+            options: OrderedMap::new()
         }
     }
 }
