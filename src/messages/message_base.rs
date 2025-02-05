@@ -43,6 +43,8 @@ pub struct MessageBase {
     truncated: bool,
     recursion_desired: bool,
     recursion_available: bool,
+    authenticated_data: bool,
+    checking_disabled: bool,
     //length: usize,
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
@@ -64,6 +66,8 @@ impl Default for MessageBase {
             truncated: false,
             recursion_desired: false,
             recursion_available: false,
+            authenticated_data: false,
+            checking_disabled: false,
             //length: 12,
             origin: None,
             destination: None,
@@ -90,15 +94,16 @@ impl MessageBase {
         buf[0] = (self.id >> 8) as u8;
         buf[1] = self.id as u8;
 
-        let z = 0;
-        let flags = (if self.qr { 0x8000 } else { 0 })
-                | ((self.op_code.get_code() & 0x0F) << 11)
-                | (if self.authoritative { 0x0400 } else { 0 })
-                | (if self.truncated { 0x0200 } else { 0 })
-                | (if self.recursion_desired { 0x0100 } else { 0 })
-                | (if self.recursion_available { 0x0080 } else { 0 })
-                | ((z & 0x07) << 4)
-                | (self.response_code.get_code() & 0x0F);
+        let flags = (if self.qr { 0x8000 } else { 0 }) |  // QR bit
+            ((self.op_code as u16 & 0x0F) << 11) |  // Opcode
+            (if self.authoritative { 0x0400 } else { 0 }) |  // AA bit
+            (if self.truncated { 0x0200 } else { 0 }) |  // TC bit
+            (if self.recursion_desired { 0x0100 } else { 0 }) |  // RD bit
+            (if self.recursion_available { 0x0080 } else { 0 }) |  // RA bit
+            //(if self.z { 0x0040 } else { 0 }) |  // Z bit (always 0)
+            (if self.authenticated_data { 0x0020 } else { 0 }) |  // AD bit
+            (if self.checking_disabled { 0x0010 } else { 0 }) |  // CD bit
+            (self.response_code as u16 & 0x000F);  // RCODE
 
         buf[2] = (flags >> 8) as u8;
         buf[3] = flags as u8;
@@ -116,7 +121,7 @@ impl MessageBase {
             //buf[offset..offset + q.len()].copy_from_slice(&q);
 
             let len = q.len();
-           // label_map.insert(query.get_query().unwrap(), offset);
+            // label_map.insert(query.get_query().unwrap(), offset);
             offset += len;
         }
 
@@ -147,24 +152,31 @@ impl MessageBase {
 
     pub fn decode(buf: &[u8], off: usize) -> Self {
         let id = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
-        let qr = ((buf[off+2] >> 7) & 0x1) == 1;
-        let op_code = OpCodes::get_op_from_code(((buf[off+2] >> 3) & 0xf) as u16).unwrap();
-        let authoritative = ((buf[off+2] >> 2) & 0x1) == 1;
-        let truncated =  ((buf[off+2] >> 1) & 0x1) == 1;
-        let recursion_desired = (buf[off+2] & 0x1) == 1;
-        let recursion_available = ((buf[off+3] >> 7) & 0x1) == 1;
-        let z = (buf[off+3] >> 4) & 0x3;
-        let response_code = ResponseCodes::get_response_code_from_code((buf[off+3] & 0xf) as u16).unwrap();
-        println!("ID: {} QR: {} OP_CODE: {} AUTH: {} TRUN: {} REC_DES: {} REC_AVA: {} Z: {} RES_CODE: {}",
+
+        let flags = ((buf[off+2] as u16) << 8) | (buf[off+3] as u16);
+
+        let qr = (flags & 0x8000) != 0;
+        let op_code = OpCodes::get_op_from_code(((flags >> 11) & 0x0F) as u8).unwrap();
+        let authoritative = (flags & 0x0400) != 0;
+        let truncated = (flags & 0x0200) != 0;
+        let recursion_desired = (flags & 0x0100) != 0;
+        let recursion_available = (flags & 0x0080) != 0;
+        //let z = (flags & 0x0040) != 0;
+        let authenticated_data = (flags & 0x0020) != 0;
+        let checking_disabled = (flags & 0x0010) != 0;
+        let response_code = ResponseCodes::get_response_code_from_code((flags & 0x000F) as u8).unwrap();
+
+        println!("ID: {} QR: {} OP_CODE: {:?} AUTH: {} TRUN: {} REC_DES: {} REC_AVA: {} AUTH_DAT: {} CHK_DIS: {} RES_CODE: {:?}",
                 id,
                 qr,
-                op_code.get_code(),
+                op_code,
                 authoritative,
                 truncated,
                 recursion_desired,
                 recursion_available,
-                z,
-                response_code.get_code());
+                authenticated_data,
+                checking_disabled,
+                response_code);
 
         let qd_count = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
         let an_count = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
@@ -201,6 +213,8 @@ impl MessageBase {
             truncated,
             recursion_desired,
             recursion_available,
+            authenticated_data,
+            checking_disabled,
             //length: off,
             origin: None,
             destination: None,

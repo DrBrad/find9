@@ -13,11 +13,10 @@ mod utils;
 
 //GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
 
-//Finish setters and getters for all the records...
-
 //MESSAGE ENCODE / DECODE FLAGS ARE NOT RIGHT... AD IS MISSING...
 
 fn main() {
+    /*
     let hex_data: Vec<u8> = vec![
         0xaf, 0xcc, 0x81, 0x80, 0x00, 0x01, 0x00, 0x09, 0x00, 0x00, 0x00, 0x01, 0x07, 0x6f, 0x75, 0x74,
         0x6c, 0x6f, 0x6f, 0x6b, 0x06, 0x6f, 0x66, 0x66, 0x69, 0x63, 0x65, 0x03, 0x63, 0x6f, 0x6d, 0x00,
@@ -47,6 +46,7 @@ fn main() {
     println!("{:x?}", message.encode());
 
     return;
+    */
 
 
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");

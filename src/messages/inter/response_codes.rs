@@ -10,7 +10,7 @@ pub enum ResponseCodes {
 
 impl ResponseCodes {
 
-    pub fn get_response_code_from_code(code: u16) -> Result<Self, String> {
+    pub fn get_response_code_from_code(code: u8) -> Result<Self, String> {
         for c in [Self::NoError, Self::FormatError, Self::ServerFailure, Self::NameError, Self::NotImplemented, Self::Refused] {
             if c.get_code() == code {
                 return Ok(c);
@@ -20,7 +20,7 @@ impl ResponseCodes {
         Err(format!("Couldn't find for code: {}", code))
     }
 
-    pub fn get_code(&self) -> u16 {
+    pub fn get_code(&self) -> u8 {
         match self {
             Self::NoError => 0,
             Self::FormatError => 1,
