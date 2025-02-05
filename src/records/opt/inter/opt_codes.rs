@@ -1,6 +1,6 @@
 
 #[derive(Copy, Clone)]
-pub enum OpCodes {
+pub enum OptCodes {
     Llq,
     Ul,
     Nsid,
@@ -22,7 +22,7 @@ pub enum OpCodes {
     MultiUserClientSubnet
 }
 
-impl OpCodes {
+impl OptCodes {
 
     pub fn get_op_from_code(code: u16) -> Result<Self, String> {
         for c in [Self::Llq] {
