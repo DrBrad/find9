@@ -66,7 +66,7 @@ impl DnsRecord for MxRecord {
 
         let priority = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
 
-        let (domain, length) = unpack_domain(buf, off+10);
+        let (domain, _) = unpack_domain(buf, off+10);
 
         Self {
             dns_class,

@@ -45,12 +45,12 @@ fn main() {
 
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
 
-    let mut message = MessageBase::new(20);//random::gen());
+    let mut message = MessageBase::new(random::gen());
     //message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
-    //message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
-    message.add_query(DnsQuery::new("microsoft.com", Types::Srv, DnsClasses::In));
+    message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
+    //message.add_query(DnsQuery::new("microsoft.com", Types::Srv, DnsClasses::In));
     message.set_recursion_desired(true);
 
     //message.add_query(DnsQuery::new("github.com", Types::Aaaa, DnsClasses::In));

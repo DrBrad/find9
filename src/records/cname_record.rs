@@ -59,7 +59,7 @@ impl DnsRecord for CNameRecord {
 
         let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
 
-        let (domain, length) = unpack_domain(buf, off+8);
+        let (domain, _) = unpack_domain(buf, off+8);
 
         Self {
             dns_class,
