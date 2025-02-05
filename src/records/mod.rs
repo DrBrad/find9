@@ -1,4 +1,5 @@
 pub mod inter;
+pub mod opt;
 pub mod a_record;
 pub mod aaaa_record;
 pub mod cname_record;
@@ -10,7 +11,6 @@ pub mod txt_record;
 pub mod opt_record;
 pub mod spf_record;
 pub mod tsig_record;
-pub mod cookie_record;
 pub mod nsec_record;
 pub mod dnskey_record;
 pub mod rrsig_record;

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::records::inter::dns_record::DnsRecord;
+use crate::records::inter::record_base::DnsRecord;
 
 #[derive(Clone)]
 pub struct ARecord {

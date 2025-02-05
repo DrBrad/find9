@@ -2,7 +2,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::records::inter::dns_record::DnsRecord;
+use crate::records::inter::record_base::DnsRecord;
 
 #[derive(Clone)]
 pub struct TxtRecord {
