@@ -9,7 +9,13 @@ use crate::utils::domain_utils::{pack_domain, unpack_domain};
 pub struct SoaRecord {
     dns_class: Option<DnsClasses>,
     ttl: u32,
-    domain: Option<String>
+    domain: Option<String>,
+    mailbox: Option<String>,
+    serial_number: u32,
+    refresh_interval: u32,
+    retry_interval: u32,
+    expire_limit: u32,
+    minimum_ttl: u32
 }
 
 impl Default for SoaRecord {
@@ -18,7 +24,13 @@ impl Default for SoaRecord {
         Self {
             dns_class: None,
             ttl: 0,
-            domain: None
+            domain: None,
+            mailbox: None,
+            serial_number: 0,
+            refresh_interval: 0,
+            retry_interval: 0,
+            expire_limit: 0,
+            minimum_ttl: 0
         }
     }
 }
@@ -39,17 +51,30 @@ impl DnsRecord for SoaRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
-
-        buf[8] = (domain.len() >> 8) as u8;
-        buf[9] = domain.len() as u8;
+        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
 
         buf.extend_from_slice(&domain);
+
+        let mut off = 12+domain.len();
+
+        let mailbox = pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12);
+        buf.extend_from_slice(&mailbox);
+
+        buf.extend_from_slice(&[(self.serial_number >> 24) as u8, (self.serial_number >> 16) as u8, (self.serial_number >> 8) as u8, self.serial_number as u8]);
+        buf.extend_from_slice(&[(self.refresh_interval >> 24) as u8, (self.refresh_interval >> 16) as u8, (self.refresh_interval >> 8) as u8, self.refresh_interval as u8]);
+        buf.extend_from_slice(&[(self.retry_interval >> 24) as u8, (self.retry_interval >> 16) as u8, (self.retry_interval >> 8) as u8, self.retry_interval as u8]);
+        buf.extend_from_slice(&[(self.expire_limit >> 24) as u8, (self.expire_limit >> 16) as u8, (self.expire_limit >> 8) as u8, self.expire_limit as u8]);
+        buf.extend_from_slice(&[(self.minimum_ttl >> 24) as u8, (self.minimum_ttl >> 16) as u8, (self.minimum_ttl >> 8) as u8, self.minimum_ttl as u8]);
+
+        buf[8] = (buf.len()-10 >> 8) as u8;
+        buf[9] = (buf.len()-10) as u8;
 
         Ok(buf)
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
+        let mut off = off;
+
         let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
         let ttl = ((buf[off+2] as u32) << 24) |
@@ -60,11 +85,46 @@ impl DnsRecord for SoaRecord {
         let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
 
         let (domain, length) = unpack_domain(buf, off+8);
+        off += length+8;
+
+        let (mailbox, length) = unpack_domain(buf, off);
+        off += length;
+
+        let serial_number = ((buf[off] as u32) << 24) |
+            ((buf[off+1] as u32) << 16) |
+            ((buf[off+2] as u32) << 8) |
+            (buf[off+3] as u32);
+
+        let refresh_interval = ((buf[off+4] as u32) << 24) |
+            ((buf[off+5] as u32) << 16) |
+            ((buf[off+6] as u32) << 8) |
+            (buf[off+7] as u32);
+
+        let retry_interval = ((buf[off+8] as u32) << 24) |
+            ((buf[off+9] as u32) << 16) |
+            ((buf[off+10] as u32) << 8) |
+            (buf[off+11] as u32);
+
+        let expire_limit = ((buf[off+12] as u32) << 24) |
+            ((buf[off+13] as u32) << 16) |
+            ((buf[off+14] as u32) << 8) |
+            (buf[off+15] as u32);
+
+        let minimum_ttl = ((buf[off+16] as u32) << 24) |
+            ((buf[off+17] as u32) << 16) |
+            ((buf[off+18] as u32) << 8) |
+            (buf[off+19] as u32);
 
         Self {
             dns_class,
             ttl,
-            domain: Some(domain)
+            domain: Some(domain),
+            mailbox: Some(mailbox),
+            serial_number,
+            refresh_interval,
+            retry_interval,
+            expire_limit,
+            minimum_ttl
         }
     }
 
@@ -99,11 +159,17 @@ impl DnsRecord for SoaRecord {
 
 impl SoaRecord {
 
-    pub fn new(dns_classes: DnsClasses, ttl: u32, domain: &str) -> Self {
+    pub fn new(dns_classes: DnsClasses, ttl: u32, domain: &str, mailbox: &str, serial_number: u32, refresh_interval: u32, retry_interval: u32, expire_limit: u32, minimum_ttl: u32) -> Self {
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            domain: Some(domain.to_string())
+            domain: Some(domain.to_string()),
+            mailbox: Some(mailbox.to_string()),
+            serial_number,
+            refresh_interval,
+            retry_interval,
+            expire_limit,
+            minimum_ttl
         }
     }
 

@@ -46,10 +46,10 @@ impl DnsRecord for MxRecord {
 
         let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+14);
 
-        buf[8] = (domain.len()+2 >> 8) as u8;
-        buf[9] = (domain.len()+2) as u8;
-
         buf.extend_from_slice(&domain);
+
+        buf[8] = (buf.len()-10 >> 8) as u8;
+        buf[9] = (buf.len()-10) as u8;
 
         Ok(buf)
     }

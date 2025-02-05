@@ -27,6 +27,7 @@ pub fn pack_domain(domain: &str, labels_map: &mut HashMap<String, usize>, off: u
 }
 
 pub fn unpack_domain(buf: &[u8], off: usize) -> (String, usize) {
+    /*
     let mut builder = String::new();
     let mut pos = off;
 
@@ -61,5 +62,52 @@ pub fn unpack_domain(buf: &[u8], off: usize) -> (String, usize) {
 
     let length = builder.len()+2;
 
-    (builder, length)
+    (builder, length)*/
+
+
+    let mut builder = String::new();
+    let mut pos = off;
+    let mut jumped = false; // Track if we followed a pointer
+    let mut original_pos = pos; // Store original position for length calculation
+
+    while pos < buf.len() {
+        let length = buf[pos] as usize;
+        pos += 1;
+
+        if length == 0 {
+            break;
+        }
+
+        if (length & 0xC0) == 0xC0 {
+            // Handle pointer (compression)
+            if pos >= buf.len() {
+                break;
+            }
+            let pointer_offset = ((length & 0x3F) << 8) | buf[pos] as usize;
+            pos += 1; // Move past pointer byte
+
+            if !jumped {
+                original_pos = pos; // Store position after the pointer
+            }
+            pos = pointer_offset; // Jump to the referenced domain offset
+            jumped = true; // Ensure we don't overwrite pos later
+
+        } else {
+            // Handle normal labels
+            if !builder.is_empty() {
+                builder.push('.');
+            }
+
+            if pos + length > buf.len() {
+                break;
+            }
+
+            let label = &buf[pos..pos + length];
+            builder.push_str(&String::from_utf8_lossy(label));
+            pos += length;
+        }
+    }
+
+    let final_pos = if jumped { original_pos } else { pos }; // Ensure correct position
+    (builder, final_pos - off) // Correct length calculation
 }

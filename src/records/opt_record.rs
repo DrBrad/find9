@@ -42,10 +42,10 @@ impl DnsRecord for OptRecord {
         buf[6] = (self.flags >> 8) as u8;
         buf[7] = self.flags as u8;
 
-        buf[8] = (self.options.len() >> 8) as u8;
-        buf[9] = self.options.len() as u8;
-
         buf.extend_from_slice(&self.options);
+
+        buf[8] = (buf.len()-10 >> 8) as u8;
+        buf[9] = (buf.len()-10) as u8;
 
         Ok(buf)
     }

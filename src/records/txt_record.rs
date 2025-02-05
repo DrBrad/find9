@@ -40,10 +40,10 @@ impl DnsRecord for TxtRecord {
 
         let encoded = self.record.as_ref().unwrap().as_bytes();
 
-        buf[8] = (encoded.len() >> 8) as u8;
-        buf[9] = encoded.len() as u8;
-
         buf.extend_from_slice(encoded);
+
+        buf[8] = (buf.len()-10 >> 8) as u8;
+        buf[9] = (buf.len()-10) as u8;
 
         Ok(buf)
     }

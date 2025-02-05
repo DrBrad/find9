@@ -48,10 +48,10 @@ impl DnsRecord for AAAARecord {
             }
         };
 
-        buf[8] = (address.len() >> 8) as u8;
-        buf[9] = address.len() as u8;
-
         buf.extend_from_slice(&address);
+
+        buf[8] = (buf.len()-10 >> 8) as u8;
+        buf[9] = (buf.len()-10) as u8;
 
         Ok(buf)
     }
@@ -148,15 +148,6 @@ impl AAAARecord {
     }
 
     pub fn set_address(&mut self, address: IpAddr) {
-        let length = match self.address.unwrap() {
-            IpAddr::V4(address) => {
-                address.octets().len()
-            }
-            IpAddr::V6(address) => {
-                address.octets().len()
-            }
-        };
-
         self.address = Some(address);
     }
 
