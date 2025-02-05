@@ -1,7 +1,9 @@
 use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::types::Types;
+use crate::records::inter::opt_codes::OptCodes;
 use crate::records::inter::record_base::DnsRecord;
+use crate::utils::ordered_map::OrderedMap;
 
 #[derive(Clone)]
 pub struct OptRecord {
@@ -9,7 +11,7 @@ pub struct OptRecord {
     ext_rcode: u8,
     edns_version: u8,
     flags: u16,
-    options: Vec<u8>
+    options: OrderedMap<OptCodes, Vec<u8>>//Vec<u8>
 }
 
 impl Default for OptRecord {
@@ -20,7 +22,7 @@ impl Default for OptRecord {
             ext_rcode: 0,
             edns_version: 0,
             flags: 0x8000,
-            options: Vec::new()
+            options: OrderedMap::new()//Vec::new()
         }
     }
 }
@@ -42,7 +44,7 @@ impl DnsRecord for OptRecord {
         buf[6] = (self.flags >> 8) as u8;
         buf[7] = self.flags as u8;
 
-        buf.extend_from_slice(&self.options);
+        //buf.extend_from_slice(&self.options);
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
@@ -57,7 +59,12 @@ impl DnsRecord for OptRecord {
         let flags = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
 
         let length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-        let options = buf[8..8 + length as usize].to_vec();
+        //let options = buf[8..8 + length as usize].to_vec();
+
+        let options = OrderedMap::new();
+
+
+
 
         Self {
             payload_size,
