@@ -11,7 +11,7 @@ pub struct OptRecord {
     ext_rcode: u8,
     edns_version: u8,
     flags: u16,
-    options: OrderedMap<OptCodes, Vec<u8>>//Vec<u8>
+    options: OrderedMap<OptCodes, Vec<u8>>
 }
 
 impl Default for OptRecord {
@@ -22,7 +22,7 @@ impl Default for OptRecord {
             ext_rcode: 0,
             edns_version: 0,
             flags: 0x8000,
-            options: OrderedMap::new()//Vec::new()
+            options: OrderedMap::new()
         }
     }
 }
@@ -62,16 +62,19 @@ impl DnsRecord for OptRecord {
         let edns_version = buf[off+3];
         let flags = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
 
-        let record_length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
+        let data_length = (((buf[off+6] as u16) << 8) | (buf[off+7] as u16)) as usize;
 
         let mut off = off+8;
+        let start = off;
         let mut options = OrderedMap::new();
 
-        while off < off+record_length as usize {
+        while off < start + data_length {
             let opt_code = OptCodes::get_opt_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap();
 
-            let length = ((buf[off+2] as u16) << 8) | (buf[off+3] as u16);
-            options.insert(opt_code, buf[off + 4..off + 4 + length as usize].to_vec());
+            let length = (((buf[off+2] as u16) << 8) | (buf[off+3] as u16)) as usize;
+            options.insert(opt_code, buf[off + 4..off + 4 + length].to_vec());
+
+            off += 4+length;
         }
 
         Self {

@@ -25,7 +25,7 @@ pub enum OptCodes {
 impl OptCodes {
 
     pub fn get_opt_from_code(code: u16) -> Result<Self, String> {
-        for c in [Self::Llq] {
+        for c in [Self::Llq, Self::Ul, Self::Nsid, Self::Dau, Self::Dhu, Self::N3u, Self::Ecs, Self::Expire, Self::Cookie, Self::TcpKeepalive, Self::Padding, Self::Chain, Self::KeyTag, Self::EdnsError, Self::DnsSecTrustedKey, Self::DnsSecValidated, Self::AdaptiveDnsDiscovery, Self::DoH, Self::MultiUserClientSubnet] {
             if c.get_code() == code {
                 return Ok(c);
             }
