@@ -4,11 +4,15 @@ use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::record_base::DnsRecord;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
+use crate::utils::ordered_map::OrderedMap;
 
 #[derive(Clone)]
 pub struct HttpsRecord {
     dns_class: Option<DnsClasses>,
-    ttl: u32
+    ttl: u32,
+    svc_priority: u16,
+    target: Option<String>,
+    params: OrderedMap<u16, Vec<u8>>
 }
 
 impl Default for HttpsRecord {
@@ -16,7 +20,10 @@ impl Default for HttpsRecord {
     fn default() -> Self {
         Self {
             dns_class: None,
-            ttl: 0
+            ttl: 0,
+            svc_priority: 0,
+            target: None,
+            params: OrderedMap::new()
         }
     }
 }
@@ -44,6 +51,8 @@ impl DnsRecord for HttpsRecord {
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
+        let mut off = off;
+
         let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
         let ttl = ((buf[off+2] as u32) << 24) |
@@ -51,21 +60,28 @@ impl DnsRecord for HttpsRecord {
             ((buf[off+4] as u32) << 8) |
             (buf[off+5] as u32);
 
-        let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
 
         let svc_priority = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
 
-        let (target, _) = unpack_domain(&buf, off+10);
+        let (target, length) = unpack_domain(&buf, off+10);
 
-        //OFF = 11 NOW
-        println!("Target [{}] {} {}", target, z, svc_priority);
+        let data_length = off+8+(((buf[off+6] as u16) << 8) | (buf[off+7] as u16)) as usize;
+        off += length+10;
 
-        //SVC PARAMS...
-
+        let mut params = OrderedMap::new();
+        while off < data_length {
+            let key = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+            let length = (((buf[off+2] as u16) << 8) | (buf[off+3] as u16)) as usize;
+            params.insert(key, buf[off + 4..off + 4 + length].to_vec());
+            off += length+4;
+        }
 
         Self {
             dns_class,
-            ttl
+            ttl,
+            svc_priority,
+            target: Some(target),
+            params
         }
     }
 
@@ -100,10 +116,13 @@ impl DnsRecord for HttpsRecord {
 
 impl HttpsRecord {
 
-    pub fn new(dns_classes: DnsClasses, ttl: u32) -> Self {
+    pub fn new(dns_classes: DnsClasses, ttl: u32, svc_priority: u16, target: &str, params: OrderedMap<u16, Vec<u8>>) -> Self {
         Self {
             dns_class: Some(dns_classes),
-            ttl
+            ttl,
+            svc_priority,
+            target: Some(target.to_string()),
+            params
         }
     }
 
