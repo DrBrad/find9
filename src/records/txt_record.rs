@@ -9,7 +9,7 @@ pub struct TxtRecord {
     dns_class: Option<DnsClasses>,
     cache_flush: bool,
     ttl: u32,
-    record: Option<String>
+    records: Vec<String>
 }
 
 impl Default for TxtRecord {
@@ -19,7 +19,7 @@ impl Default for TxtRecord {
             dns_class: None,
             cache_flush: false,
             ttl: 0,
-            record: None
+            records: Vec::new()
         }
     }
 }
@@ -44,7 +44,14 @@ impl DnsRecord for TxtRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        buf.extend_from_slice(self.record.as_ref().unwrap().as_bytes());
+        //buf.extend_from_slice(self.record.as_ref().unwrap().as_bytes());
+
+        //let bitmap_length = self.records.len()*2;
+
+        for record in &self.records {
+            buf.push(record.len() as u8);
+            buf.extend_from_slice(record.as_bytes());
+        }
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
@@ -53,6 +60,8 @@ impl DnsRecord for TxtRecord {
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
+        let mut off = off;
+
         let dns_class = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
         let cache_flush = (dns_class & 0x8000) != 0;
         let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
@@ -62,14 +71,24 @@ impl DnsRecord for TxtRecord {
             ((buf[off+4] as u32) << 8) |
             (buf[off+5] as u32);
 
-        let length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-        let record = String::from_utf8(buf[8..8 + length as usize].to_vec()).unwrap();
+        let data_length = off+8+(((buf[off+6] as u16) << 8) | (buf[off+7] as u16)) as usize;
+        off += 8;
+
+        let mut records = Vec::new();
+
+        while off < data_length {
+            let length = buf[off] as usize;
+            let record = String::from_utf8(buf[off + 1..off + 1 + length].to_vec()).unwrap();
+            println!("{} {}", length, record);
+            records.push(record);
+            off += length+1;
+        }
 
         Self {
             dns_class,
             cache_flush,
             ttl,
-            record: Some(record)
+            records
         }
     }
 
@@ -98,18 +117,18 @@ impl DnsRecord for TxtRecord {
     }
 
     fn to_string(&self) -> String {
-        format!("[RECORD] type {:?}, class {:?}, record {}", self.get_type(), self.dns_class.unwrap(), self.record.as_ref().unwrap())
+        format!("[RECORD] type {:?}, class {:?}", self.get_type(), self.dns_class.unwrap())
     }
 }
 
 impl TxtRecord {
 
-    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, record: &str) -> Self {
+    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, records: Vec<String>) -> Self {
         Self {
             dns_class: Some(dns_classes),
             cache_flush,
             ttl,
-            record: Some(record.to_string())
+            records
         }
     }
 
@@ -130,13 +149,5 @@ impl TxtRecord {
 
     pub fn get_ttl(&self) -> u32 {
         self.ttl
-    }
-
-    pub fn set_record(&mut self, record: &str) {
-        self.record = Some(record.to_string());
-    }
-
-    pub fn get_record(&self) -> Option<String> {
-        self.record.clone()
     }
 }
