@@ -24,7 +24,7 @@ Implemented Records
 | RRSIG  | TODO        |
 | NSEC   | Complete    |
 | DNSKEY | TODO        |
-| HTTPS  | In Progress |
+| HTTPS  | Complete    |
 | SPF    | TODO        |
 | TSIG   | TODO        |
 | CAA    | TODO        |
