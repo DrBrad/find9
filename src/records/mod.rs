@@ -14,3 +14,4 @@ pub mod nsec_record;
 pub mod dnskey_record;
 pub mod rrsig_record;
 pub mod srv_record;
+pub mod https_record;

@@ -10,7 +10,7 @@ Implemented Records
 -----
 
 | Type   | Implemented |
-|  ---   | ---         |
+|  ---   |-------------|
 | A      | Complete    |
 | AAAA   | Complete    |
 | NS     | Complete    |
@@ -22,9 +22,9 @@ Implemented Records
 | SRV    | Complete    |
 | OPT    | Complete    |
 | RRSIG  | TODO        |
-| NSEC   | TODO        |
+| NSEC   | Complete    |
 | DNSKEY | TODO        |
-| HTTPS  | TODO        |
+| HTTPS  | In Progress |
 | SPF    | TODO        |
 | TSIG   | TODO        |
 | CAA    | TODO        |
