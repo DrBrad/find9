@@ -11,7 +11,7 @@ pub struct NsecRecord {
     cache_flush: bool,
     ttl: u32,
     domain: Option<String>,
-    //rr_type: Option<Types>
+    rr_types: Vec<u16>
 }
 
 impl Default for NsecRecord {
@@ -22,7 +22,7 @@ impl Default for NsecRecord {
             cache_flush: false,
             ttl: 0,
             domain: None,
-            //rr_type: None
+            rr_types: Vec::new()
         }
     }
 }
@@ -49,6 +49,13 @@ impl DnsRecord for NsecRecord {
 
         buf.extend_from_slice(&pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12));
 
+        let bitmap_length = self.rr_types.len()*2;
+        buf.extend_from_slice(&[(bitmap_length*2 >> 8) as u8, bitmap_length as u8]);
+
+        for rr_type in self.rr_types.clone() {
+            buf.extend_from_slice(&[(rr_type >> 8) as u8, rr_type as u8]);
+        }
+
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
 
@@ -72,16 +79,23 @@ impl DnsRecord for NsecRecord {
         let (domain, length) = unpack_domain(buf, off+8);
         off += length+8;
 
-        //println!("{:x?} {:x?} {:x?} {:x?}", buf[off], buf[off+1], buf[off+2], buf[off+3]);
+        let bitmap_length = off+2+(((buf[off] as u16) << 8) | (buf[off+1] as u16)) as usize;
+        off += 2;
 
-        //let rr_type = Some(Types::get_type_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap());
+        let mut rr_types = Vec::new();
+
+        while off < bitmap_length {
+            let rr_type = ((buf[off] as u16) << 8) | buf[off+1] as u16;
+            rr_types.push(rr_type);
+            off += 2;
+        }
 
         Self {
             dns_class,
             cache_flush,
             ttl,
             domain: Some(domain),
-            //rr_type
+            rr_types
         }
     }
 
@@ -116,13 +130,13 @@ impl DnsRecord for NsecRecord {
 
 impl NsecRecord {
 
-    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, domain: &str/*, rr_type: Types*/) -> Self {
+    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, domain: &str, rr_types: Vec<u16>) -> Self {
         Self {
             dns_class: Some(dns_classes),
             cache_flush,
             ttl,
             domain: Some(domain.to_string()),
-            //rr_type: Some(rr_type)
+            rr_types
         }
     }
 
