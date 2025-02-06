@@ -27,44 +27,6 @@ pub fn pack_domain(domain: &str, labels_map: &mut HashMap<String, usize>, off: u
 }
 
 pub fn unpack_domain(buf: &[u8], off: usize) -> (String, usize) {
-    /*
-    let mut builder = String::new();
-    let mut pos = off;
-
-    while pos < buf.len() {
-        let length = buf[pos] as usize;
-        pos += 1;
-
-        if length == 0 {
-            break;
-        }
-
-        if (length & 0xc0) == 0xc0 {
-            if pos >= buf.len() {
-                break;
-            }
-            pos = ((length & 0x3f) << 8) | (buf[pos] as usize);
-
-        } else {
-            if !builder.is_empty() {
-                builder.push('.');
-            }
-
-            if pos + length > buf.len() {
-                break;
-            }
-
-            let label = &buf[pos..pos + length];
-            builder.push_str(&String::from_utf8_lossy(label));
-            pos += length;
-        }
-    }
-
-    let length = builder.len()+2;
-
-    (builder, length)
-    */
-
     let mut builder = String::new();
     let mut pos = off;
     let mut jumped = false;

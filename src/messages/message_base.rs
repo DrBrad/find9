@@ -264,18 +264,8 @@ impl MessageBase {
         let mut pos = off;
 
         for _ in 0..count {
-            let mut domain = String::new();
-
-            match buf[pos] {
-                0 => {
-                    pos += 1;
-                }
-                _ => {
-                    let pointer = ((buf[pos] as usize & 0x3f) << 8 | buf[pos+1] as usize & 0xff) & 0x3fff;
-                    (domain, _) = unpack_domain(buf, pointer);
-                    pos += 2;
-                }
-            }
+            let (domain, length) = unpack_domain(buf, pos);
+            pos += length;
 
             let record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
                 Types::A => {

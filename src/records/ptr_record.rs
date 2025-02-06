@@ -48,6 +48,7 @@ impl DnsRecord for PtrRecord {
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
+        println!("GOOD");
         let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
 
         let ttl = ((buf[off+2] as u32) << 24) |
