@@ -9,6 +9,7 @@ use crate::records::cname_record::CNameRecord;
 use crate::records::inter::record_base::DnsRecord;
 use crate::records::mx_record::MxRecord;
 use crate::records::ns_record::NsRecord;
+use crate::records::nsec_record::NsecRecord;
 use crate::records::opt_record::OptRecord;
 use crate::records::ptr_record::PtrRecord;
 use crate::records::soa_record::SoaRecord;
@@ -302,7 +303,7 @@ impl MessageBase {
                     todo!()
                 }
                 Types::Nsec => {
-                    todo!()
+                    NsecRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::DnsKey => {
                     todo!()
