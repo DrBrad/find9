@@ -7,6 +7,7 @@ use crate::records::inter::record_base::DnsRecord;
 #[derive(Clone)]
 pub struct TxtRecord {
     dns_class: Option<DnsClasses>,
+    cache_flush: bool,
     ttl: u32,
     record: Option<String>
 }
@@ -16,6 +17,7 @@ impl Default for TxtRecord {
     fn default() -> Self {
         Self {
             dns_class: None,
+            cache_flush: false,
             ttl: 0,
             record: None
         }
@@ -30,8 +32,12 @@ impl DnsRecord for TxtRecord {
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;
 
-        buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
-        buf[3] = self.dns_class.unwrap().get_code() as u8;
+        let mut dns_class = self.dns_class.unwrap().get_code();
+        if self.cache_flush {
+            dns_class = dns_class | 0x8000;
+        }
+        buf[2] = (dns_class >> 8) as u8;
+        buf[3] = dns_class as u8;
 
         buf[4] = (self.ttl >> 24) as u8;
         buf[5] = (self.ttl >> 16) as u8;
@@ -47,7 +53,9 @@ impl DnsRecord for TxtRecord {
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+        let dns_class = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+        let cache_flush = (dns_class & 0x8000) != 0;
+        let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
 
         let ttl = ((buf[off+2] as u32) << 24) |
             ((buf[off+3] as u32) << 16) |
@@ -59,6 +67,7 @@ impl DnsRecord for TxtRecord {
 
         Self {
             dns_class,
+            cache_flush,
             ttl,
             record: Some(record)
         }
@@ -95,9 +104,10 @@ impl DnsRecord for TxtRecord {
 
 impl TxtRecord {
 
-    pub fn new(dns_classes: DnsClasses, ttl: u32, record: &str) -> Self {
+    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, record: &str) -> Self {
         Self {
             dns_class: Some(dns_classes),
+            cache_flush,
             ttl,
             record: Some(record.to_string())
         }
