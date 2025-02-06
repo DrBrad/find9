@@ -12,6 +12,7 @@ use crate::records::ns_record::NsRecord;
 use crate::records::opt_record::OptRecord;
 use crate::records::ptr_record::PtrRecord;
 use crate::records::soa_record::SoaRecord;
+use crate::records::srv_record::SrvRecord;
 use crate::records::txt_record::TxtRecord;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
@@ -302,7 +303,7 @@ impl MessageBase {
                     TxtRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Srv => {
-                    todo!()
+                    SrvRecord::decode(buf, pos+2).dyn_clone()
                 }
                 Types::Opt => {
                     OptRecord::decode(buf, pos+2).dyn_clone()

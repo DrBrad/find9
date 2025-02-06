@@ -52,7 +52,6 @@ impl DnsRecord for SoaRecord {
         buf[7] = self.ttl as u8;
 
         let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
-
         buf.extend_from_slice(&domain);
 
         let mut off = 12+domain.len();

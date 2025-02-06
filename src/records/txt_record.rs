@@ -38,9 +38,7 @@ impl DnsRecord for TxtRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        let encoded = self.record.as_ref().unwrap().as_bytes();
-
-        buf.extend_from_slice(encoded);
+        buf.extend_from_slice(self.record.as_ref().unwrap().as_bytes());
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
@@ -97,11 +95,11 @@ impl DnsRecord for TxtRecord {
 
 impl TxtRecord {
 
-    pub fn new(dns_classes: DnsClasses, ttl: u32, content: &str) -> Self {
+    pub fn new(dns_classes: DnsClasses, ttl: u32, record: &str) -> Self {
         Self {
             dns_class: Some(dns_classes),
             ttl,
-            record: Some(content.to_string())
+            record: Some(record.to_string())
         }
     }
 

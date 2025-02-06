@@ -44,9 +44,7 @@ impl DnsRecord for MxRecord {
         buf[10] = (self.priority >> 8) as u8;
         buf[11] = self.priority as u8;
 
-        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+14);
-
-        buf.extend_from_slice(&domain);
+        buf.extend_from_slice(&pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+14));
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
