@@ -44,10 +44,6 @@ impl DnsRecord for TxtRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
-        //buf.extend_from_slice(self.record.as_ref().unwrap().as_bytes());
-
-        //let bitmap_length = self.records.len()*2;
-
         for record in &self.records {
             buf.push(record.len() as u8);
             buf.extend_from_slice(record.as_bytes());
@@ -79,7 +75,6 @@ impl DnsRecord for TxtRecord {
         while off < data_length {
             let length = buf[off] as usize;
             let record = String::from_utf8(buf[off + 1..off + 1 + length].to_vec()).unwrap();
-            println!("{} {}", length, record);
             records.push(record);
             off += length+1;
         }

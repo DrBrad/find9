@@ -6,6 +6,11 @@ pub fn pack_domain(domain: &str, labels_map: &mut HashMap<String, usize>, off: u
 
     let parts: Vec<&str> = domain.split('.').collect();
 
+    if parts.len() < 2 {
+        buf.push(0x00);
+        return buf;
+    }
+
     for i in 0..parts.len() {
         let label = parts[i..].join(".");
 

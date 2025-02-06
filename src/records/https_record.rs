@@ -31,7 +31,7 @@ impl Default for HttpsRecord {
 impl DnsRecord for HttpsRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; 10];
+        let mut buf = vec![0u8; 12];
 
         buf[0] = (self.get_type().get_code() >> 8) as u8;
         buf[1] = self.get_type().get_code() as u8;
@@ -43,6 +43,19 @@ impl DnsRecord for HttpsRecord {
         buf[5] = (self.ttl >> 16) as u8;
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
+
+        buf[10] = (self.svc_priority >> 8) as u8;
+        buf[11] = self.svc_priority as u8;
+
+        let target = pack_domain(self.target.as_ref().unwrap().as_str(), label_map, off+12);
+        buf.extend_from_slice(&target);
+
+        for (key, value) in self.params.iter() {
+            let key = key.clone();
+            buf.extend_from_slice(&[(key >> 8) as u8, key as u8]);
+            buf.extend_from_slice(&[(value.len() >> 8) as u8, value.len() as u8]);
+            buf.extend_from_slice(&value);
+        }
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
