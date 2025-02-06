@@ -53,6 +53,16 @@ impl DnsRecord for HttpsRecord {
 
         let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
 
+        let svc_priority = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
+
+        let (target, _) = unpack_domain(&buf, off+10);
+
+        //OFF = 11 NOW
+        println!("Target [{}] {} {}", target, z, svc_priority);
+
+        //SVC PARAMS...
+
+
         Self {
             dns_class,
             ttl
