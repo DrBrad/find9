@@ -45,8 +45,8 @@ impl DnsRecord for OptRecord {
         buf[7] = self.flags as u8;
 
         for (code, option) in self.options.iter() {
-            buf.extend_from_slice(&[(code.get_code() >> 8) as u8, code.get_code() as u8]);
-            buf.extend_from_slice(&[(option.len() >> 8) as u8, option.len() as u8]);
+            buf.extend_from_slice(&code.get_code().to_be_bytes());
+            buf.extend_from_slice(&(option.len() as u16).to_be_bytes());
             buf.extend_from_slice(&option);
         }
 

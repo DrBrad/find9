@@ -51,9 +51,8 @@ impl DnsRecord for HttpsRecord {
         buf.extend_from_slice(&target);
 
         for (key, value) in self.params.iter() {
-            let key = key.clone();
-            buf.extend_from_slice(&[(key >> 8) as u8, key as u8]);
-            buf.extend_from_slice(&[(value.len() >> 8) as u8, value.len() as u8]);
+            buf.extend_from_slice(&key.to_be_bytes());
+            buf.extend_from_slice(&(value.len() as u16).to_be_bytes());
             buf.extend_from_slice(&value);
         }
 
@@ -72,7 +71,6 @@ impl DnsRecord for HttpsRecord {
             ((buf[off+3] as u32) << 16) |
             ((buf[off+4] as u32) << 8) |
             (buf[off+5] as u32);
-
 
         let svc_priority = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
 

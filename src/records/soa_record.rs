@@ -38,6 +38,8 @@ impl Default for SoaRecord {
 impl DnsRecord for SoaRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+        let mut off = off;
+
         let mut buf = vec![0u8; 10];
 
         buf[0] = (self.get_type().get_code() >> 8) as u8;
@@ -54,16 +56,15 @@ impl DnsRecord for SoaRecord {
         let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
         buf.extend_from_slice(&domain);
 
-        let mut off = 12+domain.len();
+        off += 12+domain.len();
 
-        let mailbox = pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12);
-        buf.extend_from_slice(&mailbox);
+        buf.extend_from_slice(&pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12));
 
-        buf.extend_from_slice(&[(self.serial_number >> 24) as u8, (self.serial_number >> 16) as u8, (self.serial_number >> 8) as u8, self.serial_number as u8]);
-        buf.extend_from_slice(&[(self.refresh_interval >> 24) as u8, (self.refresh_interval >> 16) as u8, (self.refresh_interval >> 8) as u8, self.refresh_interval as u8]);
-        buf.extend_from_slice(&[(self.retry_interval >> 24) as u8, (self.retry_interval >> 16) as u8, (self.retry_interval >> 8) as u8, self.retry_interval as u8]);
-        buf.extend_from_slice(&[(self.expire_limit >> 24) as u8, (self.expire_limit >> 16) as u8, (self.expire_limit >> 8) as u8, self.expire_limit as u8]);
-        buf.extend_from_slice(&[(self.minimum_ttl >> 24) as u8, (self.minimum_ttl >> 16) as u8, (self.minimum_ttl >> 8) as u8, self.minimum_ttl as u8]);
+        buf.extend_from_slice(&self.serial_number.to_be_bytes());
+        buf.extend_from_slice(&self.refresh_interval.to_be_bytes());
+        buf.extend_from_slice(&self.retry_interval.to_be_bytes());
+        buf.extend_from_slice(&self.expire_limit.to_be_bytes());
+        buf.extend_from_slice(&self.minimum_ttl.to_be_bytes());
 
         buf[8] = (buf.len()-10 >> 8) as u8;
         buf[9] = (buf.len()-10) as u8;
