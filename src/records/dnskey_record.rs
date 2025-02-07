@@ -66,7 +66,7 @@ impl DnsRecord for DNSKeyRecord {
         let protocol = buf[off+10];
         let algorithm = buf[off+11];
 
-        let data_length = off+8+u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;//(((buf[off+6] as u16) << 8) | (buf[off+7] as u16)) as usize;
+        let data_length = off+8+u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
         off += 12;
 
         let public_key = buf[off..data_length].to_vec();

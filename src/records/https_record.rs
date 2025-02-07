@@ -33,19 +33,11 @@ impl DnsRecord for HttpsRecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 12];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
 
-        buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
-        buf[3] = self.dns_class.unwrap().get_code() as u8;
-
-        buf[4] = (self.ttl >> 24) as u8;
-        buf[5] = (self.ttl >> 16) as u8;
-        buf[6] = (self.ttl >> 8) as u8;
-        buf[7] = self.ttl as u8;
-
-        buf[10] = (self.svc_priority >> 8) as u8;
-        buf[11] = self.svc_priority as u8;
+        buf.splice(10..12, self.svc_priority.to_be_bytes());
 
         let target = pack_domain(self.target.as_ref().unwrap().as_str(), label_map, off+12);
         buf.extend_from_slice(&target);
@@ -56,8 +48,7 @@ impl DnsRecord for HttpsRecord {
             buf.extend_from_slice(&value);
         }
 
-        buf[8] = (buf.len()-10 >> 8) as u8;
-        buf[9] = (buf.len()-10) as u8;
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
     }
@@ -65,24 +56,20 @@ impl DnsRecord for HttpsRecord {
     fn decode(buf: &[u8], off: usize) -> Self {
         let mut off = off;
 
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+        let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
+        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
-        let ttl = ((buf[off+2] as u32) << 24) |
-            ((buf[off+3] as u32) << 16) |
-            ((buf[off+4] as u32) << 8) |
-            (buf[off+5] as u32);
-
-        let svc_priority = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
+        let svc_priority = u16::from_be_bytes([buf[off+8], buf[off+9]]);
 
         let (target, length) = unpack_domain(&buf, off+10);
 
-        let data_length = off+8+(((buf[off+6] as u16) << 8) | (buf[off+7] as u16)) as usize;
+        let data_length = off+8+u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
         off += length+10;
 
         let mut params = OrderedMap::new();
         while off < data_length {
-            let key = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
-            let length = (((buf[off+2] as u16) << 8) | (buf[off+3] as u16)) as usize;
+            let key = u16::from_be_bytes([buf[off], buf[off+1]]);
+            let length = u16::from_be_bytes([buf[off+2], buf[off+3]]) as usize;
             params.insert(key, buf[off + 4..off + 4 + length].to_vec());
             off += length+4;
         }
