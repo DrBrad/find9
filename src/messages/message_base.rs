@@ -114,29 +114,29 @@ impl MessageBase {
         buf.splice(4..6, (self.queries.len() as u16).to_be_bytes());
 
         let mut label_map = HashMap::new();
-        let mut offset = 12;
+        let mut off = 12;
 
         for query in &self.queries {
-            let q = query.encode(&mut label_map, offset);
+            let q = query.encode(&mut label_map, off);
             buf.extend_from_slice(&q);
-            offset += q.len();
+            off += q.len();
         }
 
-        let (answers, i) = Self::encode_records(offset, &self.answers, &mut label_map);
+        let (answers, i) = Self::encode_records(off, &self.answers, &mut label_map);
         buf.extend_from_slice(&answers);
 
         buf.splice(6..8, i.to_be_bytes());
 
 
 
-        let (answers, i) = Self::encode_records(offset, &self.name_servers, &mut label_map);
+        let (answers, i) = Self::encode_records(off, &self.name_servers, &mut label_map);
         buf.extend_from_slice(&answers);
 
         buf.splice(8..10, i.to_be_bytes());
 
 
 
-        let (answers, i) = Self::encode_records(offset, &self.additional_records, &mut label_map);
+        let (answers, i) = Self::encode_records(off, &self.additional_records, &mut label_map);
         buf.extend_from_slice(&answers);
 
         buf.splice(10..12, i.to_be_bytes());
