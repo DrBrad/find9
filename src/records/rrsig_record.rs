@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::record_base::DnsRecord;
-use crate::utils::domain_utils::{pack_domain, unpack_domain};
+use crate::utils::domain_utils::{pack_domain_uncompressed, unpack_domain};
 
 #[derive(Clone)]
 pub struct RRSigRecord {
@@ -16,7 +16,7 @@ pub struct RRSigRecord {
     signature_expiration: u32,
     signature_inception: u32,
     key_tag: u16,
-    signer: Option<String>,
+    signer_name: Option<String>,
     signature: Vec<u8>
 }
 
@@ -33,7 +33,7 @@ impl Default for RRSigRecord {
             signature_expiration: 0,
             signature_inception: 0,
             key_tag: 0,
-            signer: None,
+            signer_name: None,
             signature: Vec::new()
         }
     }
@@ -42,7 +42,7 @@ impl Default for RRSigRecord {
 impl DnsRecord for RRSigRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; 26];
+        let mut buf = vec![0u8; 28];
 
         buf.splice(0..2, self.get_type().get_code().to_be_bytes());
         buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
@@ -58,18 +58,14 @@ impl DnsRecord for RRSigRecord {
         buf.splice(18..22, self.signature_expiration.to_be_bytes());
         buf.splice(22..26, self.signature_inception.to_be_bytes());
 
+        buf.splice(26..28, self.key_tag.to_be_bytes());
 
+        buf.extend_from_slice(&pack_domain_uncompressed(self.signer_name.as_ref().unwrap()));
 
+        buf.extend_from_slice(&self.signature);
 
-
-
-
-        //buf.extend_from_slice(&pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12));
-
-        //buf[8] = (buf.len()-10 >> 8) as u8;
-        //buf[9] = (buf.len()-10) as u8;
-
-        println!("{:X?}", &buf);
+        buf[8] = (buf.len()-10 >> 8) as u8;
+        buf[9] = (buf.len()-10) as u8;
 
         Ok(buf)
     }
@@ -94,9 +90,10 @@ impl DnsRecord for RRSigRecord {
 
         let key_tag = u16::from_be_bytes([buf[off+24], buf[off+25]]);
 
-        let (signer, length) = unpack_domain(buf, off+26);
+        let (signer_name, length) = unpack_domain(buf, off+26);
 
         let data_length = off+8+u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
+        println!("{} {}", signer_name, u16::from_be_bytes([buf[off+6], buf[off+7]]));
         off += length+26;
 
         let signature = buf[off..data_length].to_vec();
@@ -111,7 +108,7 @@ impl DnsRecord for RRSigRecord {
             signature_expiration,
             signature_inception,
             key_tag,
-            signer: Some(signer),
+            signer_name: Some(signer_name),
             signature
         }
     }
@@ -147,7 +144,7 @@ impl DnsRecord for RRSigRecord {
 
 impl RRSigRecord {
 
-    pub fn new(dns_classes: DnsClasses, ttl: u32, type_covered: u16, algorithm: u8, labels: u8, original_ttl: u32, signature_expiration: u32, signature_inception: u32, key_tag: u16, signer: &str, signature: &[u8]) -> Self {
+    pub fn new(dns_classes: DnsClasses, ttl: u32, type_covered: u16, algorithm: u8, labels: u8, original_ttl: u32, signature_expiration: u32, signature_inception: u32, key_tag: u16, signer_name: &str, signature: &[u8]) -> Self {
         Self {
             dns_class: Some(dns_classes),
             ttl,
@@ -158,7 +155,7 @@ impl RRSigRecord {
             signature_expiration,
             signature_inception,
             key_tag,
-            signer: Some(signer.to_string()),
+            signer_name: Some(signer_name.to_string()),
             signature: signature.to_vec()
         }
     }
