@@ -29,7 +29,7 @@ pub fn pack_domain(domain: &str, labels_map: &mut HashMap<String, usize>, off: u
     for i in 0..parts.len() {
         let label = parts[i..].join(".");
 
-        if let Some(&ptr_offset) = labels_map.get(&label) {//&parts.get(i).unwrap().to_string()) {
+        if let Some(&ptr_offset) = labels_map.get(&label) {
             buf.extend_from_slice(&[(0xC0 | (ptr_offset >> 8)) as u8, (ptr_offset & 0xFF) as u8]);
             return buf;
         }

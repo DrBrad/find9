@@ -96,8 +96,7 @@ impl MessageBase {
     pub fn encode(&self) -> Vec<u8> {
         let mut buf = vec![0u8; 12];//self.length];
 
-        buf[0] = (self.id >> 8) as u8;
-        buf[1] = self.id as u8;
+        buf.splice(0..2, self.id.to_be_bytes());
 
         let flags = (if self.qr { 0x8000 } else { 0 }) |  // QR bit
             ((self.op_code as u16 & 0x0F) << 11) |  // Opcode
@@ -110,55 +109,45 @@ impl MessageBase {
             (if self.checking_disabled { 0x0010 } else { 0 }) |  // CD bit
             (self.response_code as u16 & 0x000F);  // RCODE
 
-        buf[2] = (flags >> 8) as u8;
-        buf[3] = flags as u8;
+        buf.splice(2..4, flags.to_be_bytes());
 
-        buf[4] = (self.queries.len() >> 8) as u8;
-        buf[5] = self.queries.len() as u8;
+        buf.splice(4..6, (self.queries.len() as u16).to_be_bytes());
 
         let mut label_map = HashMap::new();
         let mut offset = 12;
 
         for query in &self.queries {
             let q = query.encode(&mut label_map, offset);
-
             buf.extend_from_slice(&q);
-            //buf[offset..offset + q.len()].copy_from_slice(&q);
-
-            let len = q.len();
-            // label_map.insert(query.get_query().unwrap(), offset);
-            offset += len;
+            offset += q.len();
         }
 
         let (answers, i) = Self::encode_records(offset, &self.answers, &mut label_map);
         buf.extend_from_slice(&answers);
 
-        buf[6] = (i >> 8) as u8;
-        buf[7] = i as u8;
+        buf.splice(6..8, i.to_be_bytes());
 
 
 
         let (answers, i) = Self::encode_records(offset, &self.name_servers, &mut label_map);
         buf.extend_from_slice(&answers);
 
-        buf[8] = (i >> 8) as u8;
-        buf[9] = i as u8;
+        buf.splice(8..10, i.to_be_bytes());
 
 
 
         let (answers, i) = Self::encode_records(offset, &self.additional_records, &mut label_map);
         buf.extend_from_slice(&answers);
 
-        buf[10] = (i >> 8) as u8;
-        buf[11] = i as u8;
+        buf.splice(10..12, i.to_be_bytes());
 
         buf
     }
 
     pub fn decode(buf: &[u8], off: usize) -> Self {
-        let id = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+        let id = u16::from_be_bytes([buf[off], buf[off+1]]);
 
-        let flags = ((buf[off+2] as u16) << 8) | (buf[off+3] as u16);
+        let flags = u16::from_be_bytes([buf[off+2], buf[off+3]]);
 
         let qr = (flags & 0x8000) != 0;
         let op_code = OpCodes::get_op_from_code(((flags >> 11) & 0x0F) as u8).unwrap();
@@ -183,10 +172,10 @@ impl MessageBase {
                 checking_disabled,
                 response_code);
 
-        let qd_count = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
-        let an_count = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-        let ns_count = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
-        let ar_count = ((buf[off+10] as u16) << 8) | (buf[off+11] as u16);
+        let qd_count = u16::from_be_bytes([buf[off+4], buf[off+5]]);
+        let an_count = u16::from_be_bytes([buf[off+6], buf[off+7]]);
+        let ns_count = u16::from_be_bytes([buf[off+8], buf[off+9]]);
+        let ar_count = u16::from_be_bytes([buf[off+10], buf[off+11]]);
 
         println!("{} {} {} {}", qd_count, an_count, ns_count, ar_count);
 
@@ -271,7 +260,8 @@ impl MessageBase {
             let (domain, length) = unpack_domain(buf, pos);
             pos += length;
 
-            let record = match Types::get_type_from_code(((buf[pos] as u16) << 8) | (buf[pos+1] as u16)).unwrap() {
+
+            let record = match Types::get_type_from_code(u16::from_be_bytes([buf[pos], buf[pos+1]])).unwrap() {
                 Types::A => {
                     ARecord::decode(buf, pos+2).dyn_clone()
                 }
@@ -330,7 +320,7 @@ impl MessageBase {
             println!("{}: {}", domain, record.to_string());
 
             records.entry(domain).or_insert_with(Vec::new).push(record);
-            pos += ((buf[pos+8] as usize & 0xff) << 8) | (buf[pos+9] as usize & 0xff)+10;
+            pos += 10+u16::from_be_bytes([buf[off+8], buf[off+9]]) as usize;
         }
 
         (records, pos-off)

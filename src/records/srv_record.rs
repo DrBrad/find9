@@ -36,53 +36,38 @@ impl DnsRecord for SrvRecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 16];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
 
         let mut dns_class = self.dns_class.unwrap().get_code();
         if self.cache_flush {
             dns_class = dns_class | 0x8000;
         }
-        buf[2] = (dns_class >> 8) as u8;
-        buf[3] = dns_class as u8;
 
-        buf[4] = (self.ttl >> 24) as u8;
-        buf[5] = (self.ttl >> 16) as u8;
-        buf[6] = (self.ttl >> 8) as u8;
-        buf[7] = self.ttl as u8;
+        buf.splice(2..4, dns_class.to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
 
-        buf[10] = (self.priority >> 8) as u8;
-        buf[11] = self.priority as u8;
-
-        buf[12] = (self.weight >> 8) as u8;
-        buf[13] = self.weight as u8;
-
-        buf[14] = (self.port >> 8) as u8;
-        buf[15] = self.port as u8;
+        buf.splice(10..12, self.priority.to_be_bytes());
+        buf.splice(12..14, self.weight.to_be_bytes());
+        buf.splice(14..16, self.port.to_be_bytes());
 
         buf.extend_from_slice(&pack_domain(self.target.as_ref().unwrap().as_str(), label_map, off+16));
 
-        buf[8] = (buf.len()-10 >> 8) as u8;
-        buf[9] = (buf.len()-10) as u8;
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+        let dns_class = u16::from_be_bytes([buf[off], buf[off+1]]);
         let cache_flush = (dns_class & 0x8000) != 0;
         let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
+        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
-        let ttl = ((buf[off+2] as u32) << 24) |
-            ((buf[off+3] as u32) << 16) |
-            ((buf[off+4] as u32) << 8) |
-            (buf[off+5] as u32);
+        let z = u16::from_be_bytes([buf[off+6], buf[off+7]]);
 
-        let length = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
-
-        let priority = ((buf[off+8] as u16) << 8) | (buf[off+9] as u16);
-        let weight = ((buf[off+10] as u16) << 8) | (buf[off+11] as u16);
-        let port = ((buf[off+12] as u16) << 8) | (buf[off+13] as u16);
+        let priority = u16::from_be_bytes([buf[off+8], buf[off+9]]);
+        let weight = u16::from_be_bytes([buf[off+10], buf[off+11]]);
+        let port = u16::from_be_bytes([buf[off+12], buf[off+13]]);
 
         let (target, _) = unpack_domain(buf, off+14);
 

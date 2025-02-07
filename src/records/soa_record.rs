@@ -42,23 +42,19 @@ impl DnsRecord for SoaRecord {
 
         let mut buf = vec![0u8; 10];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
-
-        buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
-        buf[3] = self.dns_class.unwrap().get_code() as u8;
-
-        buf[4] = (self.ttl >> 24) as u8;
-        buf[5] = (self.ttl >> 16) as u8;
-        buf[6] = (self.ttl >> 8) as u8;
-        buf[7] = self.ttl as u8;
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
 
         let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
         buf.extend_from_slice(&domain);
 
         off += 12+domain.len();
 
-        buf.extend_from_slice(&pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12));
+        let mailbox = pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12);
+        buf.extend_from_slice(&mailbox);
+
+        println!("{} {:x?}", self.mailbox.as_ref().unwrap(), &mailbox);//&buf[10..buf.len()-1]);
 
         buf.extend_from_slice(&self.serial_number.to_be_bytes());
         buf.extend_from_slice(&self.refresh_interval.to_be_bytes());
@@ -66,8 +62,7 @@ impl DnsRecord for SoaRecord {
         buf.extend_from_slice(&self.expire_limit.to_be_bytes());
         buf.extend_from_slice(&self.minimum_ttl.to_be_bytes());
 
-        buf[8] = (buf.len()-10 >> 8) as u8;
-        buf[9] = (buf.len()-10) as u8;
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
     }
@@ -75,45 +70,23 @@ impl DnsRecord for SoaRecord {
     fn decode(buf: &[u8], off: usize) -> Self {
         let mut off = off;
 
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+        let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
+        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
-        let ttl = ((buf[off+2] as u32) << 24) |
-            ((buf[off+3] as u32) << 16) |
-            ((buf[off+4] as u32) << 8) |
-            (buf[off+5] as u32);
-
-        let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
+        let z = u16::from_be_bytes([buf[off+6], buf[off+7]]);
 
         let (domain, length) = unpack_domain(buf, off+8);
         off += length+8;
 
         let (mailbox, length) = unpack_domain(buf, off);
+        println!("{} {:x?}", mailbox, &buf[off..off+length]);
         off += length;
 
-        let serial_number = ((buf[off] as u32) << 24) |
-            ((buf[off+1] as u32) << 16) |
-            ((buf[off+2] as u32) << 8) |
-            (buf[off+3] as u32);
-
-        let refresh_interval = ((buf[off+4] as u32) << 24) |
-            ((buf[off+5] as u32) << 16) |
-            ((buf[off+6] as u32) << 8) |
-            (buf[off+7] as u32);
-
-        let retry_interval = ((buf[off+8] as u32) << 24) |
-            ((buf[off+9] as u32) << 16) |
-            ((buf[off+10] as u32) << 8) |
-            (buf[off+11] as u32);
-
-        let expire_limit = ((buf[off+12] as u32) << 24) |
-            ((buf[off+13] as u32) << 16) |
-            ((buf[off+14] as u32) << 8) |
-            (buf[off+15] as u32);
-
-        let minimum_ttl = ((buf[off+16] as u32) << 24) |
-            ((buf[off+17] as u32) << 16) |
-            ((buf[off+18] as u32) << 8) |
-            (buf[off+19] as u32);
+        let serial_number = u32::from_be_bytes([buf[off], buf[off+1], buf[off+2], buf[off+3]]);
+        let refresh_interval = u32::from_be_bytes([buf[off+4], buf[off+5], buf[off+6], buf[off+7]]);
+        let retry_interval = u32::from_be_bytes([buf[off+8], buf[off+9], buf[off+10], buf[off+11]]);
+        let expire_limit = u32::from_be_bytes([buf[off+12], buf[off+13], buf[off+14], buf[off+15]]);
+        let minimum_ttl = u32::from_be_bytes([buf[off+16], buf[off+17], buf[off+18], buf[off+19]]);
 
         Self {
             dns_class,

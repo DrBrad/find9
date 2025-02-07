@@ -40,10 +40,12 @@ fn main() {
     ];
     */
 
+    /*
     //OPT CHECK
     let hex_data = vec![
         0xcc, 0xe6, 0x1, 0x20, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x6, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x3, 0x63, 0x6f, 0x6d, 0x0, 0x0, 0x1, 0x0, 0x1, 0x0, 0x0, 0x29, 0x4, 0xd0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x10, 0x0, 0xa, 0x0, 0x8, 0x3b, 0xa9, 0x53, 0x3, 0x53, 0xb6, 0x4, 0xef, 0x0, 0xb, 0x0, 0x0
     ];
+    */
 
     /*
     //MDNS
@@ -78,12 +80,14 @@ fn main() {
     ];
     */
 
+    /*
     let mut message = MessageBase::decode(&hex_data, 0);
     println!("{:x?}", hex_data);
     println!("");
     println!("{:x?}", message.encode());
 
     return;
+    */
 
 
     let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 0))).expect("Failed to bind socket");
@@ -91,8 +95,8 @@ fn main() {
     let mut message = MessageBase::new(random::gen());
     //message.add_query(DnsQuery::new("outlook.office.com", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("google.com", Types::A, DnsClasses::In));
-    message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
-    //message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
+    //message.add_query(DnsQuery::new("gmail.com", Types::Mx, DnsClasses::In));
+    message.add_query(DnsQuery::new("1.1.1.1.in-addr.arpa", Types::A, DnsClasses::In));
     //message.add_query(DnsQuery::new("microsoft.com", Types::Srv, DnsClasses::In));
     message.set_recursion_desired(true);
 

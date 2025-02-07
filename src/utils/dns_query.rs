@@ -36,17 +36,15 @@ impl DnsQuery {
 
     pub fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Vec<u8> {
         let mut buf = vec![0u8; self.length];
-        let mut offset = 0;
 
         let address = pack_domain(self.query.as_ref().unwrap().as_str(), label_map, off);
-        buf[offset..offset + address.len()].copy_from_slice(&address);
-        offset += address.len();
+        buf[0..address.len()].copy_from_slice(&address);
 
-        buf[offset] = (self._type.get_code() >> 8) as u8;
-        buf[offset+1] = self._type.get_code() as u8;
+        let length = address.len();
 
-        buf[offset+2] = (self.dns_class.get_code() >> 8) as u8;
-        buf[offset+3] = self.dns_class.get_code() as u8;
+        //;
+        buf.splice(length..length+2, self.dns_class.get_code().to_be_bytes());
+        buf.splice(length+2..length+4, self.dns_class.get_code().to_be_bytes());
 
         buf
     }
@@ -55,10 +53,13 @@ impl DnsQuery {
         let (query, length) = unpack_domain(buf, off);
         let off = off+length;
 
+        let _type = Types::get_type_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap();
+        let dns_class = DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off+2], buf[off+3]])).unwrap();
+
         Self {
             query: Some(query),
-            _type: Types::get_type_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap(),
-            dns_class: DnsClasses::get_class_from_code(((buf[off+2] as u16) << 8) | (buf[off+3] as u16)).unwrap(),
+            _type,
+            dns_class,
             length: length+4
         }
     }
