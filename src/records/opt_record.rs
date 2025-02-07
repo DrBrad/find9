@@ -32,17 +32,13 @@ impl DnsRecord for OptRecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
-
-        buf[2] = (self.payload_size >> 8) as u8;
-        buf[3] = self.payload_size as u8;
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.payload_size.to_be_bytes());
 
         buf[4] = self.ext_rcode;
         buf[5] = self.edns_version;
 
-        buf[6] = (self.flags >> 8) as u8;
-        buf[7] = self.flags as u8;
+        buf.splice(6..8, self.flags.to_be_bytes());
 
         for (code, option) in self.options.iter() {
             buf.extend_from_slice(&code.get_code().to_be_bytes());
@@ -50,28 +46,24 @@ impl DnsRecord for OptRecord {
             buf.extend_from_slice(&option);
         }
 
-        buf[8] = (buf.len()-10 >> 8) as u8;
-        buf[9] = (buf.len()-10) as u8;
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        let payload_size = ((buf[off] as u16) << 8) | (buf[off+1] as u16);
+        let payload_size = u16::from_be_bytes([buf[off], buf[off+1]]);
         let ext_rcode = buf[off+2];
         let edns_version = buf[off+3];
-        let flags = ((buf[off+4] as u16) << 8) | (buf[off+5] as u16);
+        let flags = u16::from_be_bytes([buf[off+4], buf[off+5]]);
 
-        let data_length = (((buf[off+6] as u16) << 8) | (buf[off+7] as u16)) as usize;
-
+        let data_length = off+8+u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
         let mut off = off+8;
-        let start = off;
         let mut options = OrderedMap::new();
 
-        while off < start + data_length {
-            let opt_code = OptCodes::get_opt_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap();
-
-            let length = (((buf[off+2] as u16) << 8) | (buf[off+3] as u16)) as usize;
+        while off < data_length {
+            let opt_code = OptCodes::get_opt_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap();
+            let length = u16::from_be_bytes([buf[off+2], buf[off+3]]) as usize;
             options.insert(opt_code, buf[off + 4..off + 4 + length].to_vec());
 
             off += 4+length;

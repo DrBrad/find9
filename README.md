@@ -21,9 +21,9 @@ Implemented Records
 | TXT    | Complete    |
 | SRV    | Complete    |
 | OPT    | Complete    |
-| RRSIG  | TODO        |
+| RRSIG  | Complete    |
 | NSEC   | Complete    |
-| DNSKEY | TODO        |
+| DNSKEY | Complete    |
 | HTTPS  | Complete    |
 | SPF    | TODO        |
 | TSIG   | TODO        |
