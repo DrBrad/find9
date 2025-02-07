@@ -51,6 +51,7 @@ impl DnsRecord for DNSKeyRecord {
         buf[6] = (self.ttl >> 8) as u8;
         buf[7] = self.ttl as u8;
 
+        //TRY NOT TO EXTEND...
         buf.extend_from_slice(&self.flags.to_be_bytes());
         buf.push(self.protocol);
         buf.push(self.algorithm);
