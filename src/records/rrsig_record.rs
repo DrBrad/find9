@@ -54,18 +54,15 @@ impl DnsRecord for RRSigRecord {
         buf[13] = self.labels;
 
         buf.splice(14..18, self.original_ttl.to_be_bytes());
-
         buf.splice(18..22, self.signature_expiration.to_be_bytes());
         buf.splice(22..26, self.signature_inception.to_be_bytes());
-
         buf.splice(26..28, self.key_tag.to_be_bytes());
 
         buf.extend_from_slice(&pack_domain_uncompressed(self.signer_name.as_ref().unwrap()));
 
         buf.extend_from_slice(&self.signature);
 
-        buf[8] = (buf.len()-10 >> 8) as u8;
-        buf[9] = (buf.len()-10) as u8;
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
     }
@@ -73,8 +70,7 @@ impl DnsRecord for RRSigRecord {
     fn decode(buf: &[u8], off: usize) -> Self {
         let mut off = off;
 
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
-
+        let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
         let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
         let type_covered = u16::from_be_bytes([buf[off+8], buf[off+9]]);
@@ -83,17 +79,13 @@ impl DnsRecord for RRSigRecord {
         let labels = buf[off+11];
 
         let original_ttl = u32::from_be_bytes([buf[off+12], buf[off+13], buf[off+14], buf[off+15]]);
-
         let signature_expiration = u32::from_be_bytes([buf[off+16], buf[off+17], buf[off+18], buf[off+19]]);
-
         let signature_inception = u32::from_be_bytes([buf[off+20], buf[off+21], buf[off+22], buf[off+23]]);
-
         let key_tag = u16::from_be_bytes([buf[off+24], buf[off+25]]);
 
         let (signer_name, length) = unpack_domain(buf, off+26);
 
         let data_length = off+8+u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
-        println!("{} {}", signer_name, u16::from_be_bytes([buf[off+6], buf[off+7]]));
         off += length+26;
 
         let signature = buf[off..data_length].to_vec();

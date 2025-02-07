@@ -28,34 +28,22 @@ impl DnsRecord for CNameRecord {
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
-        buf[0] = (self.get_type().get_code() >> 8) as u8;
-        buf[1] = self.get_type().get_code() as u8;
-
-        buf[2] = (self.dns_class.unwrap().get_code() >> 8) as u8;
-        buf[3] = self.dns_class.unwrap().get_code() as u8;
-
-        buf[4] = (self.ttl >> 24) as u8;
-        buf[5] = (self.ttl >> 16) as u8;
-        buf[6] = (self.ttl >> 8) as u8;
-        buf[7] = self.ttl as u8;
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
 
         buf.extend_from_slice(&pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12));
 
-        buf[8] = (buf.len()-10 >> 8) as u8;
-        buf[9] = (buf.len()-10) as u8;
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
     }
 
     fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = Some(DnsClasses::get_class_from_code(((buf[off] as u16) << 8) | (buf[off+1] as u16)).unwrap());
+        let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
+        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
-        let ttl = ((buf[off+2] as u32) << 24) |
-            ((buf[off+3] as u32) << 16) |
-            ((buf[off+4] as u32) << 8) |
-            (buf[off+5] as u32);
-
-        let z = ((buf[off+6] as u16) << 8) | (buf[off+7] as u16);
+        let z = u16::from_be_bytes([buf[off+6], buf[off+7]]);
 
         let (domain, _) = unpack_domain(buf, off+8);
 
