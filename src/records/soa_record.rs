@@ -46,15 +46,13 @@ impl DnsRecord for SoaRecord {
         buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
         buf.splice(4..8, self.ttl.to_be_bytes());
 
-        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+10);
+        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
         buf.extend_from_slice(&domain);
 
         off += 12+domain.len();
 
         let mailbox = pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12);
         buf.extend_from_slice(&mailbox);
-
-        println!("{} {:x?}", self.mailbox.as_ref().unwrap(), &mailbox);//&buf[10..buf.len()-1]);
 
         buf.extend_from_slice(&self.serial_number.to_be_bytes());
         buf.extend_from_slice(&self.refresh_interval.to_be_bytes());
@@ -79,7 +77,6 @@ impl DnsRecord for SoaRecord {
         off += length+8;
 
         let (mailbox, length) = unpack_domain(buf, off);
-        println!("{} {:x?}", mailbox, &buf[off..off+length]);
         off += length;
 
         let serial_number = u32::from_be_bytes([buf[off], buf[off+1], buf[off+2], buf[off+3]]);
