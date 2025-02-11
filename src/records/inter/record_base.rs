@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 
-pub trait DnsRecord {
+pub trait RecordBase {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String>;
 
@@ -15,11 +15,11 @@ pub trait DnsRecord {
 
     fn as_any_mut(&mut self) -> &mut dyn Any;
 
-    fn upcast(&self) -> &dyn DnsRecord;
+    fn upcast(&self) -> &dyn RecordBase;
 
-    fn upcast_mut(&mut self) -> &mut dyn DnsRecord;
+    fn upcast_mut(&mut self) -> &mut dyn RecordBase;
 
-    fn dyn_clone(&self) -> Box<dyn DnsRecord>;
+    fn dyn_clone(&self) -> Box<dyn RecordBase>;
 
     fn to_string(&self) -> String;
 }

@@ -2,7 +2,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::types::Types;
 use crate::records::inter::opt_codes::OptCodes;
-use crate::records::inter::record_base::DnsRecord;
+use crate::records::inter::record_base::RecordBase;
 use crate::utils::ordered_map::OrderedMap;
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl Default for OptRecord {
     }
 }
 
-impl DnsRecord for OptRecord {
+impl RecordBase for OptRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
@@ -90,15 +90,15 @@ impl DnsRecord for OptRecord {
         self
     }
 
-    fn upcast(&self) -> &dyn DnsRecord {
+    fn upcast(&self) -> &dyn RecordBase {
         self
     }
 
-    fn upcast_mut(&mut self) -> &mut dyn DnsRecord {
+    fn upcast_mut(&mut self) -> &mut dyn RecordBase {
         self
     }
 
-    fn dyn_clone(&self) -> Box<dyn DnsRecord> {
+    fn dyn_clone(&self) -> Box<dyn RecordBase> {
         Box::new(self.clone())
     }
 

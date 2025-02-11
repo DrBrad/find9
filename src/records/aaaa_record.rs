@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::net::IpAddr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::records::inter::record_base::DnsRecord;
+use crate::records::inter::record_base::RecordBase;
 
 #[derive(Clone)]
 pub struct AAAARecord {
@@ -25,7 +25,7 @@ impl Default for AAAARecord {
     }
 }
 
-impl DnsRecord for AAAARecord {
+impl RecordBase for AAAARecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
@@ -91,15 +91,15 @@ impl DnsRecord for AAAARecord {
         self
     }
 
-    fn upcast(&self) -> &dyn DnsRecord {
+    fn upcast(&self) -> &dyn RecordBase {
         self
     }
 
-    fn upcast_mut(&mut self) -> &mut dyn DnsRecord {
+    fn upcast_mut(&mut self) -> &mut dyn RecordBase {
         self
     }
 
-    fn dyn_clone(&self) -> Box<dyn DnsRecord> {
+    fn dyn_clone(&self) -> Box<dyn RecordBase> {
         Box::new(self.clone())
     }
 

@@ -2,7 +2,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::records::inter::record_base::DnsRecord;
+use crate::records::inter::record_base::RecordBase;
 use crate::utils::domain_utils::{pack_domain, unpack_domain};
 
 #[derive(Clone)]
@@ -25,7 +25,7 @@ impl Default for MxRecord {
     }
 }
 
-impl DnsRecord for MxRecord {
+impl RecordBase for MxRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 12];
@@ -73,15 +73,15 @@ impl DnsRecord for MxRecord {
         self
     }
 
-    fn upcast(&self) -> &dyn DnsRecord {
+    fn upcast(&self) -> &dyn RecordBase {
         self
     }
 
-    fn upcast_mut(&mut self) -> &mut dyn DnsRecord {
+    fn upcast_mut(&mut self) -> &mut dyn RecordBase {
         self
     }
 
-    fn dyn_clone(&self) -> Box<dyn DnsRecord> {
+    fn dyn_clone(&self) -> Box<dyn RecordBase> {
         Box::new(self.clone())
     }
 

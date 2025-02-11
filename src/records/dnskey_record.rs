@@ -2,7 +2,7 @@ use std::any::Any;
 use std::collections::HashMap;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
-use crate::records::inter::record_base::DnsRecord;
+use crate::records::inter::record_base::RecordBase;
 
 #[derive(Clone)]
 pub struct DNSKeyRecord {
@@ -28,7 +28,7 @@ impl Default for DNSKeyRecord {
     }
 }
 
-impl DnsRecord for DNSKeyRecord {
+impl RecordBase for DNSKeyRecord {
 
     fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 14];
@@ -93,15 +93,15 @@ impl DnsRecord for DNSKeyRecord {
         self
     }
 
-    fn upcast(&self) -> &dyn DnsRecord {
+    fn upcast(&self) -> &dyn RecordBase {
         self
     }
 
-    fn upcast_mut(&mut self) -> &mut dyn DnsRecord {
+    fn upcast_mut(&mut self) -> &mut dyn RecordBase {
         self
     }
 
-    fn dyn_clone(&self) -> Box<dyn DnsRecord> {
+    fn dyn_clone(&self) -> Box<dyn RecordBase> {
         Box::new(self.clone())
     }
 
