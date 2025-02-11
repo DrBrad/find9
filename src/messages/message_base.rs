@@ -8,7 +8,7 @@ use crate::records::aaaa_record::AAAARecord;
 use crate::records::cname_record::CNameRecord;
 use crate::records::dnskey_record::DNSKeyRecord;
 use crate::records::https_record::HttpsRecord;
-use crate::records::inter::record_base::DnsRecord;
+use crate::records::inter::record_base::RecordBase;
 use crate::records::mx_record::MxRecord;
 use crate::records::ns_record::NsRecord;
 use crate::records::nsec_record::NsecRecord;
@@ -54,9 +54,9 @@ pub struct MessageBase {
     origin: Option<SocketAddr>,
     destination: Option<SocketAddr>,
     queries: Vec<DnsQuery>,
-    answers: OrderedMap<String, Vec<Box<dyn DnsRecord>>>,
-    name_servers: OrderedMap<String, Vec<Box<dyn DnsRecord>>>,
-    additional_records: OrderedMap<String, Vec<Box<dyn DnsRecord>>>
+    answers: OrderedMap<String, Vec<Box<dyn RecordBase>>>,
+    name_servers: OrderedMap<String, Vec<Box<dyn RecordBase>>>,
+    additional_records: OrderedMap<String, Vec<Box<dyn RecordBase>>>
 }
 
 impl Default for MessageBase {
@@ -219,7 +219,7 @@ impl MessageBase {
         }
     }
 
-    fn encode_records(off: usize, records: &OrderedMap<String, Vec<Box<dyn DnsRecord>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
+    fn encode_records(off: usize, records: &OrderedMap<String, Vec<Box<dyn RecordBase>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
         let mut buf = Vec::new();
         let mut i = 0;
         let mut off = off;
@@ -252,8 +252,8 @@ impl MessageBase {
         (buf, i)
     }
 
-    fn decode_records(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn DnsRecord>>>, usize) {
-        let mut records: OrderedMap<String, Vec<Box<dyn DnsRecord>>> = OrderedMap::new();
+    fn decode_records(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn RecordBase>>>, usize) {
+        let mut records: OrderedMap<String, Vec<Box<dyn RecordBase>>> = OrderedMap::new();
         let mut pos = off;
 
         for _ in 0..count {
@@ -418,7 +418,7 @@ impl MessageBase {
         self.queries.clone()
     }
 
-    pub fn add_answers(&mut self, query: &str, record: Box<dyn DnsRecord>) {
+    pub fn add_answers(&mut self, query: &str, record: Box<dyn RecordBase>) {
         if self.answers.contains_key(&query.to_string()) {
             self.answers.get_mut(&query.to_string()).unwrap().push(record);
             return;
@@ -432,11 +432,11 @@ impl MessageBase {
         &self.answers
     }*/
 
-    pub fn get_name_servers(&self) -> &OrderedMap<String, Vec<Box<dyn DnsRecord>>> {
+    pub fn get_name_servers(&self) -> &OrderedMap<String, Vec<Box<dyn RecordBase>>> {
         &self.name_servers
     }
 
-    pub fn get_additional_records(&self) -> &OrderedMap<String, Vec<Box<dyn DnsRecord>>> {
+    pub fn get_additional_records(&self) -> &OrderedMap<String, Vec<Box<dyn RecordBase>>> {
         &self.additional_records
     }
 }

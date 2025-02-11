@@ -3,7 +3,7 @@ use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::messages::message_base::MessageBase;
 use crate::records::a_record::ARecord;
-use crate::records::inter::record_base::DnsRecord;
+use crate::records::inter::record_base::RecordBase;
 use crate::utils::dns_query::DnsQuery;
 use crate::utils::random;
 
