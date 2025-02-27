@@ -117,26 +117,26 @@ impl MessageBase {
         let mut off = 12;
 
         for query in &self.queries {
-            let q = query.encode(&mut label_map, off);
+            let q = query.to_bytes(&mut label_map, off);
             buf.extend_from_slice(&q);
             off += q.len();
         }
 
-        let (answers, i) = Self::encode_records(off, &self.answers, &mut label_map);
+        let (answers, i) = Self::records_to_bytes(off, &self.answers, &mut label_map);
         buf.extend_from_slice(&answers);
 
         buf.splice(6..8, i.to_be_bytes());
 
 
 
-        let (answers, i) = Self::encode_records(off, &self.name_servers, &mut label_map);
+        let (answers, i) = Self::records_to_bytes(off, &self.name_servers, &mut label_map);
         buf.extend_from_slice(&answers);
 
         buf.splice(8..10, i.to_be_bytes());
 
 
 
-        let (answers, i) = Self::encode_records(off, &self.additional_records, &mut label_map);
+        let (answers, i) = Self::records_to_bytes(off, &self.additional_records, &mut label_map);
         buf.extend_from_slice(&answers);
 
         buf.splice(10..12, i.to_be_bytes());
@@ -144,7 +144,7 @@ impl MessageBase {
         buf
     }
 
-    pub fn decode(buf: &[u8], off: usize) -> Self {
+    pub fn from_bytes(buf: &[u8], off: usize) -> Self {
         let id = u16::from_be_bytes([buf[off], buf[off+1]]);
 
         let flags = u16::from_be_bytes([buf[off+2], buf[off+3]]);
@@ -183,19 +183,19 @@ impl MessageBase {
         let mut off = 12;
 
         for i in 0..qd_count {
-            let query = DnsQuery::decode(buf, off);
+            let query = DnsQuery::from_bytes(buf, off);
             off += query.get_length();
             println!("{}", query.to_string());
             queries.push(query);
         }
 
-        let (answers, length) = Self::decode_records(buf, off, an_count);
+        let (answers, length) = Self::records_from_bytes(buf, off, an_count);
         off += length;
 
-        let (name_servers, length) = Self::decode_records(buf, off, ns_count);
+        let (name_servers, length) = Self::records_from_bytes(buf, off, ns_count);
         off += length;
 
-        let (additional_records, length) = Self::decode_records(buf, off, ar_count);
+        let (additional_records, length) = Self::records_from_bytes(buf, off, ar_count);
         off += length;
 
         Self {
@@ -219,14 +219,14 @@ impl MessageBase {
         }
     }
 
-    fn encode_records(off: usize, records: &OrderedMap<String, Vec<Box<dyn RecordBase>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
+    fn records_to_bytes(off: usize, records: &OrderedMap<String, Vec<Box<dyn RecordBase>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
         let mut buf = Vec::new();
         let mut i = 0;
         let mut off = off;
 
         for (query, records) in records.iter() {
             for record in records {
-                match record.encode(label_map, off) {
+                match record.to_bytes(label_map, off) {
                     Ok(e) => {
                         //println!("{}: {}", query, record.to_string());
                         match query.len() {
@@ -252,7 +252,7 @@ impl MessageBase {
         (buf, i)
     }
 
-    fn decode_records(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn RecordBase>>>, usize) {
+    fn records_from_bytes(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn RecordBase>>>, usize) {
         let mut records: OrderedMap<String, Vec<Box<dyn RecordBase>>> = OrderedMap::new();
         let mut pos = off;
 
@@ -263,46 +263,46 @@ impl MessageBase {
 
             let record = match Types::get_type_from_code(u16::from_be_bytes([buf[pos], buf[pos+1]])).unwrap() {
                 Types::A => {
-                    ARecord::decode(buf, pos+2).dyn_clone()
+                    ARecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Aaaa => {
-                    AAAARecord::decode(buf, pos+2).dyn_clone()
+                    AAAARecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Ns => {
-                    NsRecord::decode(buf, pos+2).dyn_clone()
+                    NsRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Cname => {
-                    CNameRecord::decode(buf, pos+2).dyn_clone()
+                    CNameRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Soa => {
-                    SoaRecord::decode(buf, pos+2).dyn_clone()
+                    SoaRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Ptr => {
-                    PtrRecord::decode(buf, pos+2).dyn_clone()
+                    PtrRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Mx => {
-                    MxRecord::decode(buf, pos+2).dyn_clone()
+                    MxRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Txt => {
-                    TxtRecord::decode(buf, pos+2).dyn_clone()
+                    TxtRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Srv => {
-                    SrvRecord::decode(buf, pos+2).dyn_clone()
+                    SrvRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Opt => {
-                    OptRecord::decode(buf, pos+2).dyn_clone()
+                    OptRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Rrsig => {
-                    RRSigRecord::decode(buf, pos+2).dyn_clone()
+                    RRSigRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Nsec => {
-                    NsecRecord::decode(buf, pos+2).dyn_clone()
+                    NsecRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::DnsKey => {
-                    DNSKeyRecord::decode(buf, pos+2).dyn_clone()
+                    DNSKeyRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Https => {
-                    HttpsRecord::decode(buf, pos+2).dyn_clone()
+                    HttpsRecord::from_bytes(buf, pos+2).dyn_clone()
                 }
                 Types::Spf => {
                     todo!()

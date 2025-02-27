@@ -29,29 +29,7 @@ impl Default for OptRecord {
 
 impl RecordBase for OptRecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; 10];
-
-        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
-        buf.splice(2..4, self.payload_size.to_be_bytes());
-
-        buf[4] = self.ext_rcode;
-        buf[5] = self.edns_version;
-
-        buf.splice(6..8, self.flags.to_be_bytes());
-
-        for (code, option) in self.options.iter() {
-            buf.extend_from_slice(&code.get_code().to_be_bytes());
-            buf.extend_from_slice(&(option.len() as u16).to_be_bytes());
-            buf.extend_from_slice(&option);
-        }
-
-        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
-
-        Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
         let payload_size = u16::from_be_bytes([buf[off], buf[off+1]]);
         let ext_rcode = buf[off+2];
         let edns_version = buf[off+3];
@@ -76,6 +54,28 @@ impl RecordBase for OptRecord {
             flags,
             options
         }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+        let mut buf = vec![0u8; 10];
+
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.payload_size.to_be_bytes());
+
+        buf[4] = self.ext_rcode;
+        buf[5] = self.edns_version;
+
+        buf.splice(6..8, self.flags.to_be_bytes());
+
+        for (code, option) in self.options.iter() {
+            buf.extend_from_slice(&code.get_code().to_be_bytes());
+            buf.extend_from_slice(&(option.len() as u16).to_be_bytes());
+            buf.extend_from_slice(&option);
+        }
+
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
+
+        Ok(buf)
     }
 
     fn get_type(&self) -> Types {

@@ -34,21 +34,7 @@ impl DnsQuery {
         }
     }
 
-    pub fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Vec<u8> {
-        let mut buf = vec![0u8; self.length];
-
-        let address = pack_domain(self.query.as_ref().unwrap().as_str(), label_map, off);
-        buf[0..address.len()].copy_from_slice(&address);
-
-        let length = address.len();
-
-        buf.splice(length..length+2, self.dns_class.get_code().to_be_bytes());
-        buf.splice(length+2..length+4, self.dns_class.get_code().to_be_bytes());
-
-        buf
-    }
-
-    pub fn decode(buf: &[u8], off: usize) -> Self {
+    pub fn from_bytes(buf: &[u8], off: usize) -> Self {
         let (query, length) = unpack_domain(buf, off);
         let off = off+length;
 
@@ -61,6 +47,20 @@ impl DnsQuery {
             dns_class,
             length: length+4
         }
+    }
+
+    pub fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Vec<u8> {
+        let mut buf = vec![0u8; self.length];
+
+        let address = pack_domain(self.query.as_ref().unwrap().as_str(), label_map, off);
+        buf[0..address.len()].copy_from_slice(&address);
+
+        let length = address.len();
+
+        buf.splice(length..length+2, self.dns_class.get_code().to_be_bytes());
+        buf.splice(length+2..length+4, self.dns_class.get_code().to_be_bytes());
+
+        buf
     }
 
     pub fn set_query(&mut self, query: String) {

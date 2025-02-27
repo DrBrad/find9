@@ -25,21 +25,7 @@ impl Default for NsRecord {
 
 impl RecordBase for NsRecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; 10];
-
-        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
-        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
-        buf.splice(4..8, self.ttl.to_be_bytes());
-
-        buf.extend_from_slice(&pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12));
-
-        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
-
-        Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
         let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
         let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
@@ -52,6 +38,20 @@ impl RecordBase for NsRecord {
             ttl,
             domain: Some(domain)
         }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+        let mut buf = vec![0u8; 10];
+
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
+
+        buf.extend_from_slice(&pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12));
+
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
+
+        Ok(buf)
     }
 
     fn get_type(&self) -> Types {

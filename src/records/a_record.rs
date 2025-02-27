@@ -27,7 +27,30 @@ impl Default for ARecord {
 
 impl RecordBase for ARecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
+        let dns_class = u16::from_be_bytes([buf[off], buf[off+1]]);
+        let cache_flush = (dns_class & 0x8000) != 0;
+        let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
+        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
+
+        let length = u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
+        let record = &buf[off + 8..off + 8 + length];
+
+        let address = match record.len() {
+            4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
+            16 => IpAddr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
+            _ => panic!("Invalid Inet Address")
+        };
+
+        Self {
+            dns_class,
+            cache_flush,
+            ttl,
+            address: Some(address)
+        }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
         buf.splice(0..2, self.get_type().get_code().to_be_bytes());
@@ -54,29 +77,6 @@ impl RecordBase for ARecord {
         buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = u16::from_be_bytes([buf[off], buf[off+1]]);
-        let cache_flush = (dns_class & 0x8000) != 0;
-        let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
-        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
-
-        let length = u16::from_be_bytes([buf[off+6], buf[off+7]]) as usize;
-        let record = &buf[off + 8..off + 8 + length];
-
-        let address = match record.len() {
-            4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
-            16 => IpAddr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
-            _ => panic!("Invalid Inet Address")
-        };
-
-        Self {
-            dns_class,
-            cache_flush,
-            ttl,
-            address: Some(address)
-        }
     }
 
     fn get_type(&self) -> Types {

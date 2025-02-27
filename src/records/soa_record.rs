@@ -37,35 +37,7 @@ impl Default for SoaRecord {
 
 impl RecordBase for SoaRecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut off = off;
-
-        let mut buf = vec![0u8; 10];
-
-        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
-        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
-        buf.splice(4..8, self.ttl.to_be_bytes());
-
-        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
-        buf.extend_from_slice(&domain);
-
-        off += 12+domain.len();
-
-        let mailbox = pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12);
-        buf.extend_from_slice(&mailbox);
-
-        buf.extend_from_slice(&self.serial_number.to_be_bytes());
-        buf.extend_from_slice(&self.refresh_interval.to_be_bytes());
-        buf.extend_from_slice(&self.retry_interval.to_be_bytes());
-        buf.extend_from_slice(&self.expire_limit.to_be_bytes());
-        buf.extend_from_slice(&self.minimum_ttl.to_be_bytes());
-
-        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
-
-        Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
         let mut off = off;
 
         let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
@@ -96,6 +68,34 @@ impl RecordBase for SoaRecord {
             expire_limit,
             minimum_ttl
         }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+        let mut off = off;
+
+        let mut buf = vec![0u8; 10];
+
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
+
+        let domain = pack_domain(self.domain.as_ref().unwrap().as_str(), label_map, off+12);
+        buf.extend_from_slice(&domain);
+
+        off += 12+domain.len();
+
+        let mailbox = pack_domain(self.mailbox.as_ref().unwrap().as_str(), label_map, off+12);
+        buf.extend_from_slice(&mailbox);
+
+        buf.extend_from_slice(&self.serial_number.to_be_bytes());
+        buf.extend_from_slice(&self.refresh_interval.to_be_bytes());
+        buf.extend_from_slice(&self.retry_interval.to_be_bytes());
+        buf.extend_from_slice(&self.expire_limit.to_be_bytes());
+        buf.extend_from_slice(&self.minimum_ttl.to_be_bytes());
+
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
+
+        Ok(buf)
     }
 
     fn get_type(&self) -> Types {

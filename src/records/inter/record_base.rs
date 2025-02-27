@@ -5,9 +5,9 @@ use crate::messages::inter::types::Types;
 
 pub trait RecordBase {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String>;
+    fn from_bytes(buf: &[u8], off: usize) -> Self where Self: Sized;
 
-    fn decode(buf: &[u8], off: usize) -> Self where Self: Sized;
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String>;
 
     fn get_type(&self) -> Types;
 

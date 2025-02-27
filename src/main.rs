@@ -113,7 +113,7 @@ fn main() {
         Ok((size, src_addr)) => {
             println!("{:x?}", &buf[0..size]);
 
-            let message = MessageBase::decode(&buf, 0);
+            let message = MessageBase::from_bytes(&buf, 0);
             println!("{:x?}", &message.encode());
         }
         _ => {}

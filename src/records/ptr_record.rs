@@ -27,7 +27,25 @@ impl Default for PtrRecord {
 
 impl RecordBase for PtrRecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
+        let dns_class = u16::from_be_bytes([buf[off], buf[off+1]]);
+        let cache_flush = (dns_class & 0x8000) != 0;
+        let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
+        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
+
+        let z = u16::from_be_bytes([buf[off+6], buf[off+7]]);
+
+        let (domain, _) = unpack_domain(buf, off+8);
+
+        Self {
+            dns_class,
+            cache_flush,
+            ttl,
+            domain: Some(domain)
+        }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
         let mut buf = vec![0u8; 10];
 
         buf.splice(0..2, self.get_type().get_code().to_be_bytes());
@@ -45,24 +63,6 @@ impl RecordBase for PtrRecord {
         buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
         Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
-        let dns_class = u16::from_be_bytes([buf[off], buf[off+1]]);
-        let cache_flush = (dns_class & 0x8000) != 0;
-        let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
-        let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
-
-        let z = u16::from_be_bytes([buf[off+6], buf[off+7]]);
-
-        let (domain, _) = unpack_domain(buf, off+8);
-
-        Self {
-            dns_class,
-            cache_flush,
-            ttl,
-            domain: Some(domain)
-        }
     }
 
     fn get_type(&self) -> Types {

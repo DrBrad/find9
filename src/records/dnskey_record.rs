@@ -30,25 +30,7 @@ impl Default for DNSKeyRecord {
 
 impl RecordBase for DNSKeyRecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; 14];
-
-        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
-        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
-        buf.splice(4..8, self.ttl.to_be_bytes());
-
-        buf.splice(10..12, self.flags.to_be_bytes());
-        buf[12] = self.protocol;
-        buf[13] = self.algorithm;
-
-        buf.extend_from_slice(&self.public_key);
-
-        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
-
-        Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
         let mut off = off;
 
         let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
@@ -79,6 +61,24 @@ impl RecordBase for DNSKeyRecord {
             algorithm,
             public_key
         }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+        let mut buf = vec![0u8; 14];
+
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
+
+        buf.splice(10..12, self.flags.to_be_bytes());
+        buf[12] = self.protocol;
+        buf[13] = self.algorithm;
+
+        buf.extend_from_slice(&self.public_key);
+
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
+
+        Ok(buf)
     }
 
     fn get_type(&self) -> Types {

@@ -41,33 +41,7 @@ impl Default for RRSigRecord {
 
 impl RecordBase for RRSigRecord {
 
-    fn encode(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
-        let mut buf = vec![0u8; 28];
-
-        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
-        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
-        buf.splice(4..8, self.ttl.to_be_bytes());
-
-        buf.splice(10..12, self.type_covered.to_be_bytes());
-
-        buf[12] = self.algorithm;
-        buf[13] = self.labels;
-
-        buf.splice(14..18, self.original_ttl.to_be_bytes());
-        buf.splice(18..22, self.signature_expiration.to_be_bytes());
-        buf.splice(22..26, self.signature_inception.to_be_bytes());
-        buf.splice(26..28, self.key_tag.to_be_bytes());
-
-        buf.extend_from_slice(&pack_domain_uncompressed(self.signer_name.as_ref().unwrap()));
-
-        buf.extend_from_slice(&self.signature);
-
-        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
-
-        Ok(buf)
-    }
-
-    fn decode(buf: &[u8], off: usize) -> Self {
+    fn from_bytes(buf: &[u8], off: usize) -> Self {
         let mut off = off;
 
         let dns_class = Some(DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap());
@@ -103,6 +77,32 @@ impl RecordBase for RRSigRecord {
             signer_name: Some(signer_name),
             signature
         }
+    }
+
+    fn to_bytes(&self, label_map: &mut HashMap<String, usize>, off: usize) -> Result<Vec<u8>, String> {
+        let mut buf = vec![0u8; 28];
+
+        buf.splice(0..2, self.get_type().get_code().to_be_bytes());
+        buf.splice(2..4, self.dns_class.unwrap().get_code().to_be_bytes());
+        buf.splice(4..8, self.ttl.to_be_bytes());
+
+        buf.splice(10..12, self.type_covered.to_be_bytes());
+
+        buf[12] = self.algorithm;
+        buf[13] = self.labels;
+
+        buf.splice(14..18, self.original_ttl.to_be_bytes());
+        buf.splice(18..22, self.signature_expiration.to_be_bytes());
+        buf.splice(22..26, self.signature_inception.to_be_bytes());
+        buf.splice(26..28, self.key_tag.to_be_bytes());
+
+        buf.extend_from_slice(&pack_domain_uncompressed(self.signer_name.as_ref().unwrap()));
+
+        buf.extend_from_slice(&self.signature);
+
+        buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
+
+        Ok(buf)
     }
 
     fn get_type(&self) -> Types {
