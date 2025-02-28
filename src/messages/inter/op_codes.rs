@@ -7,7 +7,7 @@ pub enum OpCodes {
 
 impl OpCodes {
 
-    pub fn get_op_from_code(code: u8) -> Result<Self, String> {
+    pub fn from_code(code: u8) -> Result<Self, String> {
         for c in [Self::Query, Self::IQuery, Self::Status] {
             if c.get_code() == code {
                 return Ok(c);

@@ -150,7 +150,7 @@ impl MessageBase {
         let flags = u16::from_be_bytes([buf[off+2], buf[off+3]]);
 
         let qr = (flags & 0x8000) != 0;
-        let op_code = OpCodes::get_op_from_code(((flags >> 11) & 0x0F) as u8).unwrap();
+        let op_code = OpCodes::from_code(((flags >> 11) & 0x0F) as u8).unwrap();
         let authoritative = (flags & 0x0400) != 0;
         let truncated = (flags & 0x0200) != 0;
         let recursion_desired = (flags & 0x0100) != 0;
@@ -158,7 +158,7 @@ impl MessageBase {
         //let z = (flags & 0x0040) != 0;
         let authenticated_data = (flags & 0x0020) != 0;
         let checking_disabled = (flags & 0x0010) != 0;
-        let response_code = ResponseCodes::get_response_code_from_code((flags & 0x000F) as u8).unwrap();
+        let response_code = ResponseCodes::from_code((flags & 0x000F) as u8).unwrap();
 
         println!("ID: {} QR: {} OP_CODE: {:?} AUTH: {} TRUN: {} REC_DES: {} REC_AVA: {} AUTH_DAT: {} CHK_DIS: {} RES_CODE: {:?}",
                 id,
@@ -261,7 +261,7 @@ impl MessageBase {
             pos += length;
 
 
-            let record = match Types::get_type_from_code(u16::from_be_bytes([buf[pos], buf[pos+1]])).unwrap() {
+            let record = match Types::from_code(u16::from_be_bytes([buf[pos], buf[pos+1]])).unwrap() {
                 Types::A => {
                     ARecord::from_bytes(buf, pos+2).dyn_clone()
                 }

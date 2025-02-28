@@ -40,7 +40,7 @@ impl RecordBase for OptRecord {
         let mut options = OrderedMap::new();
 
         while off < data_length {
-            let opt_code = OptCodes::get_opt_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap();
+            let opt_code = OptCodes::from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap();
             let length = u16::from_be_bytes([buf[off+2], buf[off+3]]) as usize;
             options.insert(opt_code, buf[off + 4..off + 4 + length].to_vec());
 

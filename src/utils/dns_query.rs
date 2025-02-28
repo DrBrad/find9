@@ -38,8 +38,8 @@ impl DnsQuery {
         let (query, length) = unpack_domain(buf, off);
         let off = off+length;
 
-        let _type = Types::get_type_from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap();
-        let dns_class = DnsClasses::get_class_from_code(u16::from_be_bytes([buf[off+2], buf[off+3]])).unwrap();
+        let _type = Types::from_code(u16::from_be_bytes([buf[off], buf[off+1]])).unwrap();
+        let dns_class = DnsClasses::from_code(u16::from_be_bytes([buf[off+2], buf[off+3]])).unwrap();
 
         Self {
             query: Some(query),

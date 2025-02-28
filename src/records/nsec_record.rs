@@ -34,7 +34,7 @@ impl RecordBase for NsecRecord {
 
         let dns_class = u16::from_be_bytes([buf[off], buf[off+1]]);
         let cache_flush = (dns_class & 0x8000) != 0;
-        let dns_class = Some(DnsClasses::get_class_from_code(dns_class & 0x7FFF).unwrap());
+        let dns_class = Some(DnsClasses::from_code(dns_class & 0x7FFF).unwrap());
         let ttl = u32::from_be_bytes([buf[off+2], buf[off+3], buf[off+4], buf[off+5]]);
 
         let (domain, length) = unpack_domain(buf, off+8);

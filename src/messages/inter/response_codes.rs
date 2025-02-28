@@ -10,7 +10,7 @@ pub enum ResponseCodes {
 
 impl ResponseCodes {
 
-    pub fn get_response_code_from_code(code: u8) -> Result<Self, String> {
+    pub fn from_code(code: u8) -> Result<Self, String> {
         for c in [Self::NoError, Self::FormatError, Self::ServerFailure, Self::NameError, Self::NotImplemented, Self::Refused] {
             if c.get_code() == code {
                 return Ok(c);

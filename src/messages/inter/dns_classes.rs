@@ -8,7 +8,7 @@ pub enum DnsClasses {
 
 impl DnsClasses {
 
-    pub fn get_class_from_code(code: u16) -> Result<Self, String> {
+    pub fn from_code(code: u16) -> Result<Self, String> {
         for c in [Self::In, Self::Cs, Self::Ch, Self::Hs] {
             if c.get_code() == code {
                 return Ok(c);
