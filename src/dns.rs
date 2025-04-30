@@ -11,6 +11,7 @@ use crate::records::a_record::ARecord;
 use crate::records::aaaa_record::AAAARecord;
 use crate::rpc::call::Call;
 use crate::rpc::response_tracker::ResponseTracker;
+use crate::utils::net::address_utils::is_bogon;
 use crate::utils::spam_throttle::SpamThrottle;
 
 pub struct Dns {
@@ -145,13 +146,15 @@ fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Resul
         response.set_origin(request.get_destination().unwrap());
         response.set_destination(request.get_origin().unwrap());
 
+        let is_bogon = if is_bogon(request.get_origin().unwrap()) { "network < 2" } else { "network > 0" };
+
         for query in request.get_queries() {
             match query.get_type() {
                 Types::A => {
                     let records = database.as_ref().unwrap().get(
                         "a",
                         Some(vec!["class", "ttl", "address", "cache_flush"]),
-                        Some(format!("class = {} AND domain = '{}'", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase()).as_str())
+                        Some(format!("class = {} AND domain = '{}' AND {}", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase(), is_bogon).as_str())
                     );
 
                     if records.is_empty() {
@@ -169,8 +172,8 @@ fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Resul
                 Types::Aaaa => {
                     let records = database.as_ref().unwrap().get(
                         "aaaa",
-                        Some(vec!["class", "ttl", "address", "cache_flush"]),
-                        Some(format!("class = {} AND domain = '{}'", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase()).as_str())
+                        Some(vec!["class", "ttl", "address", "cache_flush", "network"]),
+                        Some(format!("class = {} AND domain = '{}' AND {}", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase(), is_bogon).as_str())
                     );
 
                     if records.is_empty() {

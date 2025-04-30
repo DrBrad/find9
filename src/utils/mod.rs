@@ -1,3 +1,4 @@
+pub mod net;
 pub mod dns_query;
 pub mod domain_utils;
 pub mod linked_hashmap;
