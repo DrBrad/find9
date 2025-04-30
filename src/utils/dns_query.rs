@@ -67,11 +67,8 @@ impl DnsQuery {
         self.query = Some(query);
     }
 
-    pub fn get_query(&self) -> Result<String, String> {
-        match self.query {
-            Some(ref query) => Ok(query.clone()),
-            None => Err("DNS query is not set".to_string())
-        }
+    pub fn get_query(&self) -> Option<&String> {
+        self.query.as_ref()
     }
 
     pub fn set_type(&mut self, _type: Types) {

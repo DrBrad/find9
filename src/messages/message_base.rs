@@ -424,14 +424,7 @@ impl MessageBase {
             self.answers.get_mut(&query.to_string()).unwrap().push(record);
             return;
         }
-
-        //self.answers.push(record);
     }
-
-    /*
-    pub fn get_answers(&self) -> &Vec<Box<dyn DnsRecord>> {
-        &self.answers
-    }*/
 
     pub fn get_name_servers(&self) -> &OrderedMap<String, Vec<Box<dyn RecordBase>>> {
         &self.name_servers

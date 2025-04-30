@@ -12,7 +12,6 @@ use crate::utils::random;
 mod messages;
 mod records;
 mod utils;
-mod server;
 mod dns;
 //GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
 
@@ -21,8 +20,10 @@ mod dns;
 //CACHE FLUSH - LAST BYTE IS A 1.. FOR DNS_CLASS
 
 fn main() {
-    let dns = Dns::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, 6767))).unwrap();
+    let mut dns = Dns::new();
+    dns.start(6767).unwrap();
 
+    loop {}
 
     /*
 
