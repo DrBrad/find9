@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::database::sqlite::Database;
 use crate::messages::inter::types::Types;
 use crate::messages::message_base::MessageBase;
+use crate::records::a_record::ARecord;
 use crate::rpc::call::Call;
 use crate::rpc::response_tracker::ResponseTracker;
 use crate::utils::spam_throttle::SpamThrottle;
@@ -14,7 +15,7 @@ use crate::utils::spam_throttle::SpamThrottle;
 pub struct Dns {
     server: Option<UdpSocket>,
     fallback: Vec<SocketAddr>,
-    database: Option<Database>,
+    database: Option<String>,
     running: Arc<AtomicBool>
 }
 
@@ -42,11 +43,16 @@ impl Dns {
             let server = self.server.as_ref().unwrap().try_clone()?;
             let fallback = self.fallback.clone();
             let running = Arc::clone(&self.running);
-            //let database = self.database.clone();
+            let database = self.database.clone();
             move || {
                 let mut tracker = ResponseTracker::new();
                 let receiver_throttle = SpamThrottle::new();
-                let on_response = on_response(None);
+
+                let database = match database {
+                    Some(database) => Some(Database::open_or_create(&database).unwrap()),
+                    None => None
+                };
+                let on_response = on_response(database);
 
                 let mut buf = [0u8; 65535];
                 let mut last_decay_time = SystemTime::now()
@@ -115,16 +121,16 @@ impl Dns {
         self.running.load(Ordering::Relaxed)
     }
 
-    pub fn set_database(&mut self, database: Database) {
-        self.database = Some(database);
-    }
-
     pub fn add_fallback(&mut self, addr: SocketAddr) {
         self.fallback.push(addr);
     }
 
     pub fn remove_fallback(&mut self, addr: SocketAddr) {
         self.fallback.retain(|&x| x != addr);
+    }
+
+    pub fn set_database(&mut self, database: &str) {
+        self.database = Some(database.to_string());
     }
 }
 
@@ -137,25 +143,29 @@ fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Resul
         response.set_destination(request.get_origin().unwrap());
 
         if database.is_none() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Database wasn't set"));
+            return Err(io::Error::new(io::ErrorKind::Other, "Database not set"));
         }
 
         for query in request.get_queries() {
             match query.get_type() {
                 Types::A => {
-                    //response.add_query(query.clone());
-
-                    //let record = ARecord::new(query.get_dns_class(), false, 300, Ipv4Addr::new(8, 8, 8, 8));
-                    //response.add_answers(query.get_query().unwrap(), Box::new(record));
-                    let record = database.as_ref().unwrap().get(
+                    let records = database.as_ref().unwrap().get(
                         "a",
                         Some(vec!["class", "ttl", "address", "cache_flush"]),
-                        Some(format!("class = {} AND domain >= {}", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase()).as_str())
+                        Some(format!("class = {} AND domain = '{}'", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase()).as_str())
                     );
 
-                    println!("{:x?}", &record);
+                    if records.is_empty() {
+                        return Err(io::Error::new(io::ErrorKind::Other, "Document not found"));
+                    }
 
-                    return Err(io::Error::new(io::ErrorKind::Other, "Document not found"));
+                    for record in records {
+                        let ttl = record.get("ttl").unwrap().parse::<u32>().unwrap();
+                        let address = record.get("address").unwrap().parse::<u32>().unwrap();
+                        let cache_flush = record.get("cache_flush").unwrap().parse::<bool>().unwrap();
+
+                        response.add_answers(query.get_query().unwrap(), Box::new(ARecord::new(query.get_dns_class(), cache_flush, ttl, Ipv4Addr::from(address))));
+                    }
                 }
                 /*Types::Aaaa => {}
                 Types::Ns => {}

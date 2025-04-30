@@ -1,5 +1,4 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
-use crate::database::sqlite::Database;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use crate::dns::Dns;
 
 mod messages;
@@ -16,7 +15,7 @@ mod database;
 fn main() {
     let mut dns = Dns::new();
     dns.add_fallback(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 53));
-    dns.set_database(Database::open_or_create("records.db").unwrap());
+    dns.set_database("records.db");
     dns.start(6767).unwrap();
 
     loop {}
