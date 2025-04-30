@@ -52,6 +52,8 @@ impl Dns {
                 while running.load(Ordering::Relaxed) {
                     match server.recv_from(&mut buf) {
                         Ok((size, src_addr)) => {
+                            println!("{:x?}", &buf[..size]);
+
                             match MessageBase::from_bytes(&buf, 0) {
                                 Ok(mut message) => {
                                     message.set_origin(src_addr);

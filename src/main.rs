@@ -27,6 +27,18 @@ fn main() {
 
     loop {}
 
+
+    /*
+    let x = vec![ 0xa7, 0xa2, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x06, 0x67, 0x6f, 0x6f,
+                  0x67, 0x6c, 0x65, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01, 0xc0, 0x0c, 0x00, 0x01,
+                  0x00, 0x01, 0x00, 0x00, 0x01, 0x23, 0x00, 0x04, 0x8e, 0xfa, 0x45, 0xee, 0x00, 0x00, 0x29, 0x04,
+                  0xd0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ];
+    println!("{:x?}", &x);
+
+    let message = MessageBase::from_bytes(&x, 0).unwrap();
+    println!("{:x?}", message.to_bytes());
+    */
+
     /*
 
     let mut message = MessageBase::new(random::gen());
@@ -37,10 +49,10 @@ fn main() {
     //message.add_query(DnsQuery::new("microsoft.com", Types::Srv, DnsClasses::In));
     message.set_recursion_desired(true);
 
-    let encoded = message.encode();
+    let encoded = message.to_bytes();
     println!("{:x?}", &encoded);
 
-    socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
+    //socket.send_to(message.encode().as_slice(), SocketAddr::from((IpAddr::from([1, 1, 1, 1]), 53))).expect("Failed to send message");
 
     let mut buf = [0u8; 512];
     match socket.recv_from(&mut buf) {
@@ -51,6 +63,5 @@ fn main() {
             println!("{:x?}", &message.encode());
         }
         _ => {}
-    }
-    */
+    }*/
 }

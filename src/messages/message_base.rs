@@ -145,10 +145,8 @@ impl MessageBase {
         let (name_servers, length) = Self::records_from_bytes(buf, off, ns_count);
         off += length;
 
-        //WE NEED TO FIX THIS...
-        let additional_records = OrderedMap::new();
-        //let (additional_records, length) = Self::records_from_bytes(buf, off, ar_count);
-        //off += length;
+        let (additional_records, length) = Self::records_from_bytes(buf, off, ar_count);
+        off += length;
 
         Ok(Self {
             id,
@@ -176,9 +174,17 @@ impl MessageBase {
         let mut pos = off;
 
         for _ in 0..count {
-            let (domain, length) = unpack_domain(buf, pos);
-            pos += length;
-
+            let domain = match buf[pos] {
+                0 => {
+                    pos += 1;
+                    String::new()
+                }
+                _ => {
+                    let (domain, length) = unpack_domain(buf, pos);
+                    pos += length;
+                    domain
+                }
+            };
 
             let record = match Types::from_code(u16::from_be_bytes([buf[pos], buf[pos+1]])).unwrap() {
                 Types::A => {
@@ -239,7 +245,7 @@ impl MessageBase {
             println!("{}: {}", domain, record.to_string());
 
             records.entry(domain).or_insert_with(Vec::new).push(record);
-            pos += 10+u16::from_be_bytes([buf[off+8], buf[off+9]]) as usize;
+            pos += 10+u16::from_be_bytes([buf[pos+8], buf[pos+9]]) as usize;
         }
 
         (records, pos-off)
