@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
-use std::net::IpAddr;
+use std::net::Ipv6Addr;
 use crate::messages::inter::dns_classes::DnsClasses;
 use crate::messages::inter::types::Types;
 use crate::records::inter::record_base::RecordBase;
@@ -10,7 +10,7 @@ pub struct AAAARecord {
     dns_class: Option<DnsClasses>,
     cache_flush: bool,
     ttl: u32,
-    address: Option<IpAddr>
+    address: Option<Ipv6Addr>
 }
 
 impl Default for AAAARecord {
@@ -37,8 +37,7 @@ impl RecordBase for AAAARecord {
         let record = &buf[off + 8..off + 8 + length];
 
         let address = match record.len() {
-            4 => IpAddr::from(<[u8; 4]>::try_from(record).expect("Invalid IPv4 address")),
-            16 => IpAddr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
+            16 => Ipv6Addr::from(<[u8; 16]>::try_from(record).expect("Invalid IPv6 address")),
             _ => panic!("Invalid Inet Address")
         };
 
@@ -63,16 +62,7 @@ impl RecordBase for AAAARecord {
         buf.splice(2..4, dns_class.to_be_bytes());
         buf.splice(4..8, self.ttl.to_be_bytes());
 
-        let address = match self.address.unwrap() {
-            IpAddr::V4(address) => {
-                address.octets().to_vec()
-            }
-            IpAddr::V6(address) => {
-                address.octets().to_vec()
-            }
-        };
-
-        buf.extend_from_slice(&address);
+        buf.extend_from_slice(&self.address.unwrap().octets().to_vec());
 
         buf.splice(8..10, ((buf.len()-10) as u16).to_be_bytes());
 
@@ -110,7 +100,7 @@ impl RecordBase for AAAARecord {
 
 impl AAAARecord {
 
-    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, address: IpAddr) -> Self {
+    pub fn new(dns_classes: DnsClasses, cache_flush: bool, ttl: u32, address: Ipv6Addr) -> Self {
         Self {
             dns_class: Some(dns_classes),
             cache_flush,
@@ -138,11 +128,11 @@ impl AAAARecord {
         self.ttl
     }
 
-    pub fn set_address(&mut self, address: IpAddr) {
+    pub fn set_address(&mut self, address: Ipv6Addr) {
         self.address = Some(address);
     }
 
-    pub fn get_address(&self) -> Option<IpAddr> {
+    pub fn get_address(&self) -> Option<Ipv6Addr> {
         self.address
     }
 }

@@ -1,5 +1,5 @@
 use std::{io, thread};
-use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, UdpSocket};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
@@ -8,6 +8,7 @@ use crate::database::sqlite::Database;
 use crate::messages::inter::types::Types;
 use crate::messages::message_base::MessageBase;
 use crate::records::a_record::ARecord;
+use crate::records::aaaa_record::AAAARecord;
 use crate::rpc::call::Call;
 use crate::rpc::response_tracker::ResponseTracker;
 use crate::utils::spam_throttle::SpamThrottle;
@@ -79,7 +80,6 @@ impl Dns {
 
                                     match on_response(&message) {
                                         Ok(mut response) => {
-                                            response.set_authoritative(true);
                                             server.send_to(&response.to_bytes(), response.get_destination().unwrap()).unwrap();
                                         }
                                         Err(_) => {
@@ -134,15 +134,16 @@ impl Dns {
 
 fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Result<MessageBase> {
     move |request| {
-        let mut response = MessageBase::new(request.get_id());
-        response.set_op_code(request.get_op_code());
-        response.set_qr(true);
-        response.set_origin(request.get_destination().unwrap());
-        response.set_destination(request.get_origin().unwrap());
-
         if database.is_none() {
             return Err(io::Error::new(io::ErrorKind::Other, "Database not set"));
         }
+
+        let mut response = MessageBase::new(request.get_id());
+        response.set_op_code(request.get_op_code());
+        response.set_qr(true);
+        response.set_authoritative(true);
+        response.set_origin(request.get_destination().unwrap());
+        response.set_destination(request.get_origin().unwrap());
 
         for query in request.get_queries() {
             match query.get_type() {
@@ -165,7 +166,26 @@ fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Resul
                         response.add_answers(query.get_query().unwrap(), Box::new(ARecord::new(query.get_dns_class(), cache_flush, ttl, Ipv4Addr::from(address))));
                     }
                 }
-                /*Types::Aaaa => {}
+                Types::Aaaa => {
+                    let records = database.as_ref().unwrap().get(
+                        "aaaa",
+                        Some(vec!["class", "ttl", "address", "cache_flush"]),
+                        Some(format!("class = {} AND domain = '{}'", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase()).as_str())
+                    );
+
+                    if records.is_empty() {
+                        return Err(io::Error::new(io::ErrorKind::Other, "Document not found"));
+                    }
+
+                    for record in records {
+                        let ttl = record.get("ttl").unwrap().parse::<u32>().unwrap();
+                        let address = record.get("address").unwrap().parse::<u128>().unwrap();
+                        let cache_flush = record.get("cache_flush").unwrap().parse::<bool>().unwrap();
+
+                        response.add_answers(query.get_query().unwrap(), Box::new(AAAARecord::new(query.get_dns_class(), cache_flush, ttl, Ipv6Addr::from(address))));
+                    }
+                }
+                /*
                 Types::Ns => {}
                 Types::Cname => {}
                 Types::Soa => {}
@@ -181,7 +201,8 @@ fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Resul
                 Types::Spf => {}
                 Types::Tsig => {}
                 Types::Any => {}
-                Types::Caa => {}*/
+                Types::Caa => {}
+                */
                 _ => todo!()
             }
         }
