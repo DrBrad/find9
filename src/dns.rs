@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 use std::time::{SystemTime, UNIX_EPOCH};
+use crate::database::sqlite::Database;
 use crate::messages::inter::types::Types;
 use crate::messages::message_base::MessageBase;
 use crate::rpc::call::Call;
@@ -13,6 +14,7 @@ use crate::utils::spam_throttle::SpamThrottle;
 pub struct Dns {
     server: Option<UdpSocket>,
     fallback: Vec<SocketAddr>,
+    database: Option<Database>,
     running: Arc<AtomicBool>
 }
 
@@ -22,6 +24,7 @@ impl Dns {
         Self {
             server: None,
             fallback: Vec::new(),
+            database: None,
             running: Arc::new(AtomicBool::new(false))
         }
     }
@@ -39,9 +42,11 @@ impl Dns {
             let server = self.server.as_ref().unwrap().try_clone()?;
             let fallback = self.fallback.clone();
             let running = Arc::clone(&self.running);
+            //let database = self.database.clone();
             move || {
                 let mut tracker = ResponseTracker::new();
                 let receiver_throttle = SpamThrottle::new();
+                let on_response = on_response(None);
 
                 let mut buf = [0u8; 65535];
                 let mut last_decay_time = SystemTime::now()
@@ -68,7 +73,7 @@ impl Dns {
                                         continue;
                                     }
 
-                                    match Self::on_response(&message) {
+                                    match on_response(&message) {
                                         Ok(mut response) => {
                                             response.set_authoritative(true);
                                             server.send_to(&response.to_bytes(), response.get_destination().unwrap()).unwrap();
@@ -110,6 +115,10 @@ impl Dns {
         self.running.load(Ordering::Relaxed)
     }
 
+    pub fn set_database(&mut self, database: Database) {
+        self.database = Some(database);
+    }
+
     pub fn add_fallback(&mut self, addr: SocketAddr) {
         self.fallback.push(addr);
     }
@@ -117,13 +126,19 @@ impl Dns {
     pub fn remove_fallback(&mut self, addr: SocketAddr) {
         self.fallback.retain(|&x| x != addr);
     }
+}
 
-    fn on_response(request: &MessageBase) -> io::Result<MessageBase> {
+fn on_response(database: Option<Database>) -> impl Fn(&MessageBase) -> io::Result<MessageBase> {
+    move |request| {
         let mut response = MessageBase::new(request.get_id());
         response.set_op_code(request.get_op_code());
         response.set_qr(true);
         response.set_origin(request.get_destination().unwrap());
         response.set_destination(request.get_origin().unwrap());
+
+        if database.is_none() {
+            return Err(io::Error::new(io::ErrorKind::Other, "Database wasn't set"));
+        }
 
         for query in request.get_queries() {
             match query.get_type() {
@@ -132,6 +147,13 @@ impl Dns {
 
                     //let record = ARecord::new(query.get_dns_class(), false, 300, Ipv4Addr::new(8, 8, 8, 8));
                     //response.add_answers(query.get_query().unwrap(), Box::new(record));
+                    let record = database.as_ref().unwrap().get(
+                        "a",
+                        Some(vec!["class", "ttl", "address", "cache_flush"]),
+                        Some(format!("class = {} AND domain >= {}", query.get_dns_class().get_code(), query.get_query().unwrap().to_lowercase()).as_str())
+                    );
+
+                    println!("{:x?}", &record);
 
                     return Err(io::Error::new(io::ErrorKind::Other, "Document not found"));
                 }
@@ -155,8 +177,6 @@ impl Dns {
                 _ => todo!()
             }
         }
-
-
 
         Ok(response)
     }

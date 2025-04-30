@@ -1,20 +1,13 @@
-use std::io;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
+use crate::database::sqlite::Database;
 use crate::dns::Dns;
-use crate::messages::inter::dns_classes::DnsClasses;
-use crate::messages::inter::types::Types;
-use crate::messages::message_base::MessageBase;
-use crate::records::a_record::ARecord;
-use crate::records::inter::record_base::RecordBase;
-use crate::utils::dns_query::DnsQuery;
-use crate::utils::random;
 
 mod messages;
 mod records;
 mod utils;
 mod dns;
 mod rpc;
-//GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
+mod database;
 
 //MESSAGE ENCODE / DECODE FLAGS ARE NOT RIGHT... AD IS MISSING...
 
@@ -23,6 +16,7 @@ mod rpc;
 fn main() {
     let mut dns = Dns::new();
     dns.add_fallback(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 53));
+    dns.set_database(Database::open_or_create("records.db").unwrap());
     dns.start(6767).unwrap();
 
     loop {}
