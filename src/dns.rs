@@ -1,15 +1,18 @@
 use std::{io, thread};
-use std::net::{Ipv4Addr, SocketAddr, ToSocketAddrs, UdpSocket};
+use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use crate::messages::inter::dns_classes::DnsClasses;
+use std::thread::JoinHandle;
+use std::time::{SystemTime, UNIX_EPOCH};
 use crate::messages::inter::types::Types;
 use crate::messages::message_base::MessageBase;
-use crate::records::a_record;
-use crate::records::a_record::ARecord;
+use crate::rpc::call::Call;
+use crate::rpc::response_tracker::ResponseTracker;
+use crate::utils::spam_throttle::SpamThrottle;
 
 pub struct Dns {
     server: Option<UdpSocket>,
+    fallback: Vec<SocketAddr>,
     running: Arc<AtomicBool>
 }
 
@@ -18,36 +21,61 @@ impl Dns {
     pub fn new() -> Self {
         Self {
             server: None,
+            fallback: Vec::new(),
             running: Arc::new(AtomicBool::new(false))
         }
     }
 
-    pub fn start(&mut self, port: u16) -> io::Result<()> {
+    pub fn start(&mut self, port: u16) -> io::Result<JoinHandle<()>> {
         if self.is_running() {
             return Err(io::Error::new(io::ErrorKind::Other, "Server is already running"));
         }
 
         self.running.store(true, Ordering::Relaxed);
-
         self.server = Some(UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)))?);
+        self.server.as_ref().unwrap().set_nonblocking(true)?;
 
-        thread::spawn({
+        Ok(thread::spawn({
             let server = self.server.as_ref().unwrap().try_clone()?;
+            let fallback = self.fallback.clone();
             let running = Arc::clone(&self.running);
             move || {
+                let mut tracker = ResponseTracker::new();
+                let receiver_throttle = SpamThrottle::new();
+
                 let mut buf = [0u8; 65535];
+                let mut last_decay_time = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_millis();
 
                 while running.load(Ordering::Relaxed) {
                     match server.recv_from(&mut buf) {
                         Ok((size, src_addr)) => {
                             match MessageBase::from_bytes(&buf, 0) {
-                                Ok(message) => {
-                                    println!("{:?}", message.to_bytes());
+                                Ok(mut message) => {
+                                    message.set_origin(src_addr);
+                                    message.set_destination(server.local_addr().unwrap());
 
+                                    if message.is_qr() {
+                                        if let Some(call) = tracker.poll(message.get_id()) {
+                                            message.set_authoritative(false);
+                                            server.send_to(&message.to_bytes(), call.get_address()).unwrap();
+                                        }
 
-                                    let response = Self::on_response(message);
+                                        continue;
+                                    }
 
-                                    server.send_to(&response.to_bytes(), src_addr);
+                                    match Self::on_response(&message) {
+                                        Ok(mut response) => {
+                                            response.set_authoritative(true);
+                                            server.send_to(&response.to_bytes(), response.get_destination().unwrap()).unwrap();
+                                        }
+                                        Err(_) => {
+                                            tracker.add(message.get_id(), Call::new(message.get_origin().unwrap()));
+                                            server.send_to(&message.to_bytes(), fallback.get(0).unwrap()).unwrap();
+                                        }
+                                    }
                                 }
                                 Err(_) => {}
                             }
@@ -55,11 +83,21 @@ impl Dns {
                         Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
                         _ => break
                     }
+
+                    let now = SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Time went backwards")
+                        .as_millis();
+
+                    if now - last_decay_time >= 1000 {
+                        receiver_throttle.decay();
+                        tracker.remove_stalled();
+
+                        last_decay_time = now;
+                    }
                 }
             }
-        });
-
-        Ok(())
+        }))
     }
 
     pub fn stop(&self) {
@@ -70,20 +108,30 @@ impl Dns {
         self.running.load(Ordering::Relaxed)
     }
 
-    fn on_response(request: MessageBase) -> MessageBase {
+    pub fn add_fallback(&mut self, addr: SocketAddr) {
+        self.fallback.push(addr);
+    }
+
+    pub fn remove_fallback(&mut self, addr: SocketAddr) {
+        self.fallback.retain(|&x| x != addr);
+    }
+
+    fn on_response(request: &MessageBase) -> io::Result<MessageBase> {
         let mut response = MessageBase::new(request.get_id());
         response.set_op_code(request.get_op_code());
         response.set_qr(true);
-        println!("{}", request.is_qr());
-        //response.set_destination(request.get_origin().unwrap());
-        //response.set_authoritative(true);
+        response.set_origin(request.get_destination().unwrap());
+        response.set_destination(request.get_origin().unwrap());
 
         for query in request.get_queries() {
-            let record = match query.get_type() {
+            match query.get_type() {
                 Types::A => {
-                    let record = ARecord::new(DnsClasses::In, false, 300, Ipv4Addr::new(127, 0, 0, 1));
+                    //response.add_query(query.clone());
 
-                    record
+                    //let record = ARecord::new(query.get_dns_class(), false, 300, Ipv4Addr::new(8, 8, 8, 8));
+                    //response.add_answers(query.get_query().unwrap(), Box::new(record));
+
+                    return Err(io::Error::new(io::ErrorKind::Other, "Document not found"));
                 }
                 /*Types::Aaaa => {}
                 Types::Ns => {}
@@ -103,14 +151,11 @@ impl Dns {
                 Types::Any => {}
                 Types::Caa => {}*/
                 _ => todo!()
-            };
-
-            response.add_answers(query.get_query().unwrap(), Box::new(record));
-            println!("{}", query.to_string());
+            }
         }
 
 
 
-        response
+        Ok(response)
     }
 }

@@ -13,6 +13,7 @@ mod messages;
 mod records;
 mod utils;
 mod dns;
+mod rpc;
 //GET AWAY FROM USING ENUM FOR TYPE, GO WITH METHOD USED IN rlibdht TO HANDLE CUSTOM MESSAGES
 
 //MESSAGE ENCODE / DECODE FLAGS ARE NOT RIGHT... AD IS MISSING...
@@ -21,6 +22,7 @@ mod dns;
 
 fn main() {
     let mut dns = Dns::new();
+    dns.add_fallback(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 1, 1, 1)), 53));
     dns.start(6767).unwrap();
 
     loop {}

@@ -145,8 +145,10 @@ impl MessageBase {
         let (name_servers, length) = Self::records_from_bytes(buf, off, ns_count);
         off += length;
 
-        let (additional_records, length) = Self::records_from_bytes(buf, off, ar_count);
-        off += length;
+        //WE NEED TO FIX THIS...
+        let additional_records = OrderedMap::new();
+        //let (additional_records, length) = Self::records_from_bytes(buf, off, ar_count);
+        //off += length;
 
         Ok(Self {
             id,
@@ -424,6 +426,8 @@ impl MessageBase {
             self.answers.get_mut(&query.to_string()).unwrap().push(record);
             return;
         }
+
+        self.answers.insert(query.to_string(), vec![record]);
     }
 
     pub fn get_name_servers(&self) -> &OrderedMap<String, Vec<Box<dyn RecordBase>>> {

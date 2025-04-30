@@ -3,3 +3,4 @@ pub mod domain_utils;
 pub mod linked_hashmap;
 pub mod ordered_map;
 pub mod random;
+pub mod spam_throttle;
