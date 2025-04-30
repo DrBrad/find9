@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io;
 use std::net::SocketAddr;
 use crate::messages::inter::op_codes::OpCodes;
 use crate::messages::inter::response_codes::ResponseCodes;
@@ -93,64 +94,13 @@ impl MessageBase {
         }
     }
 
-    pub fn encode(&self) -> Vec<u8> {
-        let mut buf = vec![0u8; 12];//self.length];
-
-        buf.splice(0..2, self.id.to_be_bytes());
-
-        let flags = (if self.qr { 0x8000 } else { 0 }) |  // QR bit
-            ((self.op_code as u16 & 0x0F) << 11) |  // Opcode
-            (if self.authoritative { 0x0400 } else { 0 }) |  // AA bit
-            (if self.truncated { 0x0200 } else { 0 }) |  // TC bit
-            (if self.recursion_desired { 0x0100 } else { 0 }) |  // RD bit
-            (if self.recursion_available { 0x0080 } else { 0 }) |  // RA bit
-            //(if self.z { 0x0040 } else { 0 }) |  // Z bit (always 0)
-            (if self.authenticated_data { 0x0020 } else { 0 }) |  // AD bit
-            (if self.checking_disabled { 0x0010 } else { 0 }) |  // CD bit
-            (self.response_code as u16 & 0x000F);  // RCODE
-
-        buf.splice(2..4, flags.to_be_bytes());
-
-        buf.splice(4..6, (self.queries.len() as u16).to_be_bytes());
-
-        let mut label_map = HashMap::new();
-        let mut off = 12;
-
-        for query in &self.queries {
-            let q = query.to_bytes(&mut label_map, off);
-            buf.extend_from_slice(&q);
-            off += q.len();
-        }
-
-        let (answers, i) = Self::records_to_bytes(off, &self.answers, &mut label_map);
-        buf.extend_from_slice(&answers);
-
-        buf.splice(6..8, i.to_be_bytes());
-
-
-
-        let (answers, i) = Self::records_to_bytes(off, &self.name_servers, &mut label_map);
-        buf.extend_from_slice(&answers);
-
-        buf.splice(8..10, i.to_be_bytes());
-
-
-
-        let (answers, i) = Self::records_to_bytes(off, &self.additional_records, &mut label_map);
-        buf.extend_from_slice(&answers);
-
-        buf.splice(10..12, i.to_be_bytes());
-
-        buf
-    }
-
-    pub fn from_bytes(buf: &[u8], off: usize) -> Self {
+    pub fn from_bytes(buf: &[u8], off: usize) -> io::Result<Self> {
         let id = u16::from_be_bytes([buf[off], buf[off+1]]);
 
         let flags = u16::from_be_bytes([buf[off+2], buf[off+3]]);
 
         let qr = (flags & 0x8000) != 0;
-        let op_code = OpCodes::from_code(((flags >> 11) & 0x0F) as u8).unwrap();
+        let op_code = OpCodes::from_code(((flags >> 11) & 0x0F) as u8)?;
         let authoritative = (flags & 0x0400) != 0;
         let truncated = (flags & 0x0200) != 0;
         let recursion_desired = (flags & 0x0100) != 0;
@@ -158,7 +108,7 @@ impl MessageBase {
         //let z = (flags & 0x0040) != 0;
         let authenticated_data = (flags & 0x0020) != 0;
         let checking_disabled = (flags & 0x0010) != 0;
-        let response_code = ResponseCodes::from_code((flags & 0x000F) as u8).unwrap();
+        let response_code = ResponseCodes::from_code((flags & 0x000F) as u8)?;
 
         println!("ID: {} QR: {} OP_CODE: {:?} AUTH: {} TRUN: {} REC_DES: {} REC_AVA: {} AUTH_DAT: {} CHK_DIS: {} RES_CODE: {:?}",
                 id,
@@ -198,7 +148,7 @@ impl MessageBase {
         let (additional_records, length) = Self::records_from_bytes(buf, off, ar_count);
         off += length;
 
-        Self {
+        Ok(Self {
             id,
             op_code,
             response_code,
@@ -216,40 +166,7 @@ impl MessageBase {
             answers,
             name_servers,
             additional_records
-        }
-    }
-
-    fn records_to_bytes(off: usize, records: &OrderedMap<String, Vec<Box<dyn RecordBase>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
-        let mut buf = Vec::new();
-        let mut i = 0;
-        let mut off = off;
-
-        for (query, records) in records.iter() {
-            for record in records {
-                match record.to_bytes(label_map, off) {
-                    Ok(e) => {
-                        //println!("{}: {}", query, record.to_string());
-                        match query.len() {
-                            0 => {
-                                buf.push(0);
-                            }
-                            _ => {
-                                let eq = pack_domain(query, label_map, off);
-                                buf.extend_from_slice(&eq);
-                                off += eq.len();
-                            }
-                        }
-
-                        buf.extend_from_slice(&e);
-                        off += e.len();
-                    }
-                    Err(_) => {}
-                }
-                i += 1;
-            }
-        }
-
-        (buf, i)
+        })
     }
 
     fn records_from_bytes(buf: &[u8], off: usize, count: u16) -> (OrderedMap<String, Vec<Box<dyn RecordBase>>>, usize) {
@@ -324,6 +241,90 @@ impl MessageBase {
         }
 
         (records, pos-off)
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut buf = vec![0u8; 12];//self.length];
+
+        buf.splice(0..2, self.id.to_be_bytes());
+
+        let flags = (if self.qr { 0x8000 } else { 0 }) |  // QR bit
+            ((self.op_code as u16 & 0x0F) << 11) |  // Opcode
+            (if self.authoritative { 0x0400 } else { 0 }) |  // AA bit
+            (if self.truncated { 0x0200 } else { 0 }) |  // TC bit
+            (if self.recursion_desired { 0x0100 } else { 0 }) |  // RD bit
+            (if self.recursion_available { 0x0080 } else { 0 }) |  // RA bit
+            //(if self.z { 0x0040 } else { 0 }) |  // Z bit (always 0)
+            (if self.authenticated_data { 0x0020 } else { 0 }) |  // AD bit
+            (if self.checking_disabled { 0x0010 } else { 0 }) |  // CD bit
+            (self.response_code as u16 & 0x000F);  // RCODE
+
+        buf.splice(2..4, flags.to_be_bytes());
+
+        buf.splice(4..6, (self.queries.len() as u16).to_be_bytes());
+
+        let mut label_map = HashMap::new();
+        let mut off = 12;
+
+        for query in &self.queries {
+            let q = query.to_bytes(&mut label_map, off);
+            buf.extend_from_slice(&q);
+            off += q.len();
+        }
+
+        let (answers, i) = Self::records_to_bytes(off, &self.answers, &mut label_map);
+        buf.extend_from_slice(&answers);
+
+        buf.splice(6..8, i.to_be_bytes());
+
+
+
+        let (answers, i) = Self::records_to_bytes(off, &self.name_servers, &mut label_map);
+        buf.extend_from_slice(&answers);
+
+        buf.splice(8..10, i.to_be_bytes());
+
+
+
+        let (answers, i) = Self::records_to_bytes(off, &self.additional_records, &mut label_map);
+        buf.extend_from_slice(&answers);
+
+        buf.splice(10..12, i.to_be_bytes());
+
+        buf
+    }
+
+    fn records_to_bytes(off: usize, records: &OrderedMap<String, Vec<Box<dyn RecordBase>>>, label_map: &mut HashMap<String, usize>) -> (Vec<u8>, u16) {
+        let mut buf = Vec::new();
+        let mut i = 0;
+        let mut off = off;
+
+        for (query, records) in records.iter() {
+            for record in records {
+                match record.to_bytes(label_map, off) {
+                    Ok(e) => {
+                        //println!("{}: {}", query, record.to_string());
+                        match query.len() {
+                            0 => {
+                                buf.push(0);
+                            }
+                            _ => {
+                                let eq = pack_domain(query, label_map, off);
+                                buf.extend_from_slice(&eq);
+                                off += eq.len();
+                            }
+                        }
+
+                        buf.extend_from_slice(&e);
+                        off += e.len();
+                    }
+                    Err(_) => {}
+                }
+                i += 1;
+            }
+        }
+
+        (buf, i)
     }
 
     pub fn set_id(&mut self, id: u16) {

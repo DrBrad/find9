@@ -1,3 +1,5 @@
+use std::io;
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum DnsClasses {
     In,
@@ -8,14 +10,14 @@ pub enum DnsClasses {
 
 impl DnsClasses {
 
-    pub fn from_code(code: u16) -> Result<Self, String> {
+    pub fn from_code(code: u16) -> io::Result<Self> {
         for c in [Self::In, Self::Cs, Self::Ch, Self::Hs] {
             if c.get_code() == code {
                 return Ok(c);
             }
         }
 
-        Err(format!("Couldn't find for code: {}", code))
+        Err(io::Error::new(io::ErrorKind::InvalidInput, format!("Couldn't find for code: {}", code)))
     }
 
     pub fn get_code(&self) -> u16 {

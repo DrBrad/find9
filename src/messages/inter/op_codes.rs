@@ -1,3 +1,5 @@
+use std::io;
+
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum OpCodes {
     Query,
@@ -7,14 +9,14 @@ pub enum OpCodes {
 
 impl OpCodes {
 
-    pub fn from_code(code: u8) -> Result<Self, String> {
+    pub fn from_code(code: u8) -> io::Result<Self> {
         for c in [Self::Query, Self::IQuery, Self::Status] {
             if c.get_code() == code {
                 return Ok(c);
             }
         }
 
-        Err(format!("Couldn't find for code: {}", code))
+        Err(io::Error::new(io::ErrorKind::InvalidInput, format!("Couldn't find for code: {}", code)))
     }
 
     pub fn get_code(&self) -> u8 {
