@@ -110,6 +110,7 @@ impl MessageBase {
         let checking_disabled = (flags & 0x0010) != 0;
         let response_code = ResponseCodes::from_code((flags & 0x000F) as u8)?;
 
+        /*
         println!("ID: {} QR: {} OP_CODE: {:?} AUTH: {} TRUN: {} REC_DES: {} REC_AVA: {} AUTH_DAT: {} CHK_DIS: {} RES_CODE: {:?}",
                 id,
                 qr,
@@ -121,13 +122,14 @@ impl MessageBase {
                 authenticated_data,
                 checking_disabled,
                 response_code);
+                */
 
         let qd_count = u16::from_be_bytes([buf[off+4], buf[off+5]]);
         let an_count = u16::from_be_bytes([buf[off+6], buf[off+7]]);
         let ns_count = u16::from_be_bytes([buf[off+8], buf[off+9]]);
         let ar_count = u16::from_be_bytes([buf[off+10], buf[off+11]]);
 
-        println!("{} {} {} {}", qd_count, an_count, ns_count, ar_count);
+        //println!("{} {} {} {}", qd_count, an_count, ns_count, ar_count);
 
         let mut queries = Vec::new();
         let mut off = 12;
@@ -135,7 +137,7 @@ impl MessageBase {
         for i in 0..qd_count {
             let query = DnsQuery::from_bytes(buf, off);
             off += query.get_length();
-            println!("{}", query.to_string());
+            //println!("{}", query.to_string());
             queries.push(query);
         }
 
@@ -242,7 +244,7 @@ impl MessageBase {
                     todo!()
                 }
             };
-            println!("{}: {}", domain, record.to_string());
+            //println!("{}: {}", domain, record.to_string());
 
             records.entry(domain).or_insert_with(Vec::new).push(record);
             pos += 10+u16::from_be_bytes([buf[pos+8], buf[pos+9]]) as usize;
